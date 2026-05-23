@@ -2156,13 +2156,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const history = branch.filter(n => n.role !== 'system').map(n => ({ role: n.role, content: n.content }));
       const lastUserIdx = history.map(m => m.role).lastIndexOf('user');
       if (lastUserIdx !== -1) {
-        history[lastUserIdx].content = `${settings.prefixPrompt}${history[lastUserIdx].content}${settings.suffixPrompt}`;
+        const prefix = settings.prefixPrompt || '';
+        const suffix = settings.suffixPrompt || '';
+        history[lastUserIdx].content = `${prefix}${history[lastUserIdx].content}${suffix}`;
       }
       const maxMsgs = settings.maxContextRounds * 2;
       const trimmed = history.length > maxMsgs ? history.slice(-maxMsgs) : history;
       reqMessages.push(...trimmed);
 
-      const resp = await fetch(`${settings.apiBaseUrl}/chat/completions`, {
+      const baseUrl = (settings.apiBaseUrl || '').replace(/\/+$/, '');
+      const resp = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` },
         body: JSON.stringify({ model: settings.modelName, messages: reqMessages, temperature: parseFloat(settings.temperature), stream: true, max_tokens: 4096 }),
