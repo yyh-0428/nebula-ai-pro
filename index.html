@@ -1924,8 +1924,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const conflicts = detectMemoryConflict(oldMem, newMem);
     if (conflicts && memoryConflictAlert) {
       if (memoryPanel) memoryPanel.classList.add('open');
-      memoryConflictAlert.innerHTML = `<i class="fa fa-exclamation-triangle" style="margin-right:4px"></i>检测到 ${conflicts.length} 处潜在冲突：<br>` +
-        conflicts.map(c => `• "${c.old}" → "${c.new}" (相似度 ${(c.similarity * 100).toFixed(0)}%)`).join('<br>');
+      const safeHtml = `<i class="fa fa-exclamation-triangle" style="margin-right:4px"></i>检测到 ${conflicts.length} 处潜在冲突：<br>` +
+        conflicts.map(c => `• "${escapeHtml(c.old)}" → "${escapeHtml(c.new)}" (相似度 ${(c.similarity * 100).toFixed(0)}%)`).join('<br>');
+      memoryConflictAlert.innerHTML = safeHtml;
       memoryConflictAlert.classList.add('show');
     } else if (memoryConflictAlert) {
       memoryConflictAlert.classList.remove('show');
@@ -2028,6 +2029,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelBtn.onclick = () => { div.classList.remove('editing'); };
     confirmBtn.onclick = async () => {
       const newContent = textarea?.value.trim(); if (!newContent) return;
+      if (confirmBtn.disabled) return; confirmBtn.disabled = true;
       div.classList.remove('editing');
       convTree.branchFrom(node.id, newContent);
       const newNode = convTree.nodes.get(convTree.activeLeafId);
