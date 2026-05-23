@@ -2214,8 +2214,6 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     });
   }
-  loadTree();
-
   // 滚动偏离时显示"回到底部"按钮
   const scrollBottomBtn = $('scrollBottomBtn');
   if (chatContainer && scrollBottomBtn) {
@@ -2225,6 +2223,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     scrollBottomBtn.onclick = () => chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
   }
+
+  loadTree();
 
   function renderBranch() {
     if (!chatContainer) return;
