@@ -353,6 +353,7 @@ body {
 }
 .sidebar-footer-btn:hover { background: var(--surface); color: var(--ink); }
 .sidebar-footer-btn i { width: 16px; text-align: center; font-size: 0.75rem; }
+#searchInput:focus { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
 
 /* Sidebar toggle button (visible when sidebar collapsed) */
 .sidebar-show-btn {
@@ -550,6 +551,34 @@ body {
   display: none;
 }
 .memory-conflict.show { display: block; }
+.memory-tier-tabs{display:flex;border-bottom:1px solid var(--border);padding:0 12px}
+.memory-tier-tab{padding:5px 10px;font-size:.68rem;color:var(--ink-muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
+.memory-tier-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.memory-tier-tab:hover{color:var(--ink)}
+.memory-tier-action{padding:3px 8px;font-size:.65rem;color:var(--ink-muted);background:none;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;margin-right:4px}
+.memory-tier-action:hover{color:var(--primary);border-color:var(--primary);background:var(--primary-soft)}
+
+/* === World Book Panel === */
+.worldbook-panel{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.worldbook-panel.show{display:flex}
+.worldbook-modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:560px;max-height:80vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+.worldbook-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+.worldbook-header h3{margin:0;font-size:.9rem;color:var(--ink)}
+.worldbook-close{background:none;border:none;color:var(--ink-muted);cursor:pointer;font-size:1rem;padding:4px}
+.worldbook-body{flex:1;overflow-y:auto;padding:12px 16px}
+.worldbook-entry{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px}
+.worldbook-entry-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.worldbook-entry-title{font-weight:600;font-size:.82rem;color:var(--ink)}
+.worldbook-entry-actions{display:flex;gap:4px}
+.wb-act{background:none;border:1px solid var(--border);border-radius:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);cursor:pointer;font-size:.65rem}
+.wb-act:hover{background:var(--primary-soft);color:var(--primary);border-color:var(--primary)}
+.wb-act.del:hover{background:var(--error-bg);color:var(--error);border-color:var(--error)}
+.worldbook-keywords{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.wb-kw{font-size:.65rem;padding:2px 6px;border-radius:99px;background:var(--primary-soft);color:var(--primary);border:1px solid rgba(124,58,237,.15)}
+.worldbook-content{font-size:.75rem;color:var(--ink-2);line-height:1.5}
+.worldbook-footer{padding:10px 16px;border-top:1px solid var(--border)}
+.worldbook-add-btn{width:100%;padding:8px;border:1px dashed var(--border);border-radius:var(--radius-sm);background:none;color:var(--primary);font-size:.78rem;cursor:pointer;transition:all .15s}
+.worldbook-add-btn:hover{background:var(--primary-soft);border-color:var(--primary)}
 
 /* === Chat Container === */
 .chat-container {
@@ -625,6 +654,8 @@ body {
   box-shadow: var(--msg-ai-shadow);
   border: 1px solid var(--msg-ai-border);
 }
+.summary-indicator{opacity:.7;margin-bottom:8px}
+.summary-indicator .msg-bubble{max-height:80px;overflow-y:auto}
 
 /* === Message Actions === */
 .msg-actions {
@@ -1789,14 +1820,19 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
     <button class="sidebar-toggle" id="sidebarCollapseBtn" title="收起侧边栏"><i class="fa fa-angle-left"></i></button>
   </div>
   <button class="new-chat-btn" id="newChatBtn"><i class="fa fa-plus"></i> 新建对话</button>
+  <div style="padding:0 8px 6px">
+    <input type="text" id="searchInput" placeholder="搜索对话内容..." style="width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.8rem;background:var(--surface);color:var(--ink);outline:none">
+  </div>
   <div class="sidebar-section-title">历史记录</div>
   <div class="chat-history-list" id="chatHistoryList"></div>
   <div class="sidebar-footer">
     <div class="sidebar-footer-btns">
       <button class="sidebar-footer-btn" id="sidebarSettingsBtn"><i class="fa fa-cog"></i> 模型设置</button>
-      <button class="sidebar-footer-btn" id="sidebarExportBtn"><i class="fa fa-download"></i> 导出对话</button>
+      <button class="sidebar-footer-btn" id="sidebarExportBtn"><i class="fa fa-download"></i> 导出</button>
+      <button class="sidebar-footer-btn" id="sidebarImportBtn"><i class="fa fa-upload"></i> 导入</button>
       <button class="sidebar-footer-btn" id="sidebarShortcutBtn"><i class="fa fa-keyboard-o"></i> 快捷键</button>
     </div>
+    <input type="file" id="importFileInput" accept=".json,.md" style="display:none">
   </div>
 </aside>
 <button class="sidebar-show-btn" id="sidebarShowBtn" title="展开侧边栏"><i class="fa fa-bars"></i></button>
@@ -1811,6 +1847,8 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
       </div>
       <div class="header-actions">
         <button class="icon-btn" id="memoryBtn" title="全局记忆"><i class="fa fa-address-book-o"></i></button>
+        <button class="icon-btn" id="summarizeBtn" title="总结对话"><i class="fa fa-compress"></i></button>
+        <button class="icon-btn" id="worldBookBtn" title="世界书"><i class="fa fa-book"></i></button>
         <button class="icon-btn" id="visualBtn" title="可视化模式"><i class="fa fa-object-group"></i></button>
         <button class="icon-btn" id="branchBtn" title="分支视图"><i class="fa fa-code-fork"></i></button>
         <button class="icon-btn" id="themeBtn" title="切换主题 (自动/浅色/深色/极光)"><i class="fa fa-moon-o"></i></button>
@@ -1822,11 +1860,25 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
     <div class="memory-panel" id="memoryPanel">
       <div class="memory-header">
         <span class="memory-label"><i class="fa fa-address-card-o"></i> AI 全局记忆</span>
-        <button class="memory-save-btn" id="saveMemoryBtn">保存记忆</button>
+        <div style="display:flex;gap:4px">
+          <button class="memory-save-btn" id="extractMemoryBtn" title="从对话中提取记忆"><i class="fa fa-magic"></i></button>
+          <button class="memory-save-btn" id="saveMemoryBtn">保存记忆</button>
+        </div>
       </div>
-      <textarea class="memory-textarea" id="globalMemoryInput" rows="3" placeholder="例如：我叫小明，是一名前端工程师..."></textarea>
+      <div style="overflow-y:auto;flex:1">
+        <div class="memory-tier-tabs">
+          <button class="memory-tier-tab active" data-tier="globalCore">核心记忆</button>
+          <button class="memory-tier-tab" data-tier="globalNotes">临时笔记</button>
+        </div>
+        <textarea class="memory-textarea" id="globalCoreMemoryInput" rows="3" placeholder="重要的、永久的信息..." style="min-height:60px"></textarea>
+        <textarea class="memory-textarea" id="globalNotesInput" rows="3" placeholder="临时笔记，可随时清理..." style="min-height:60px;display:none"></textarea>
+        <div id="globalNotesActions" style="display:none;padding:4px 12px;border-bottom:1px solid var(--border)">
+          <button class="memory-tier-action" id="globalPromoteBtn" title="将笔记提升为核心记忆"><i class="fa fa-arrow-up"></i> 提升为核心</button>
+          <button class="memory-tier-action" id="globalClearNotesBtn" title="清空临时笔记"><i class="fa fa-trash-o"></i> 清空</button>
+        </div>
+      </div>
       <div class="memory-conflict" id="memoryConflictAlert"></div>
-      <p class="memory-hint">记忆会自动添加到系统提示词中，帮助 AI 了解你。</p>
+      <p class="memory-hint">核心记忆永久生效，临时笔记可随时清理。点击魔法棒从对话中自动提取。</p>
     </div>
   </header>
 
@@ -1877,6 +1929,19 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
     <div class="settings-modal-body">
       <!-- 模型配置 -->
       <div class="settings-panel active" id="panel-model">
+        <div class="settings-field">
+          <label class="settings-label">配置方案：</label>
+          <div style="display:flex;gap:6px;flex:1">
+            <div class="select-wrap" style="flex:1">
+              <select class="settings-select" id="profileSelect">
+                <option value="">当前配置</option>
+              </select>
+              <i class="fa fa-chevron-down select-arrow"></i>
+            </div>
+            <button type="button" class="settings-link-btn" id="saveProfileBtn" title="保存为方案"><i class="fa fa-floppy-o"></i></button>
+            <button type="button" class="settings-link-btn" id="deleteProfileBtn" title="删除方案"><i class="fa fa-trash-o"></i></button>
+          </div>
+        </div>
         <div class="settings-field">
           <label class="settings-label">模型厂商：</label>
           <div class="select-wrap">
@@ -2045,6 +2110,44 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
   </div>
 </div>
 
+<!-- World Book Modal -->
+<div class="worldbook-panel" id="worldBookModal">
+  <div class="worldbook-modal">
+    <div class="worldbook-header">
+      <h3><i class="fa fa-book"></i> 世界书</h3>
+      <button class="worldbook-close" id="wbClose"><i class="fa fa-times"></i></button>
+    </div>
+    <div class="worldbook-body" id="wbBody"></div>
+    <div class="worldbook-footer">
+      <button class="worldbook-add-btn" id="wbAddBtn"><i class="fa fa-plus"></i> 添加条目</button>
+    </div>
+  </div>
+</div>
+
+<!-- World Book Entry Editor Modal -->
+<div class="modal-overlay" id="wbEditorModal">
+  <div class="modal-content glass" style="max-width:420px">
+    <div class="modal-header">
+      <h2 class="modal-title" style="font-size:1rem" id="wbEditorTitle">添加世界书条目</h2>
+      <button class="icon-btn" id="wbEditorClose"><i class="fa fa-times"></i></button>
+    </div>
+    <div style="padding:16px">
+      <div class="form-group"><label class="form-label">条目名称 *</label><input type="text" class="form-input" id="wbeName" placeholder="例如：龙族历史"></div>
+      <div class="form-group"><label class="form-label">触发关键词 (逗号分隔)</label><input type="text" class="form-input" id="wbeKeywords" placeholder="例如：龙, 龙族, 龙语"></div>
+      <div class="form-group"><label class="form-label">内容</label><textarea class="form-textarea" id="wbeContent" rows="4" placeholder="关于这个世界设定的详细信息..."></textarea></div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="wbeAlways"> <label for="wbeAlways" style="font-size:.78rem;color:var(--ink)">常驻注入（每次对话都包含）</label>
+      </div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+      <button class="settings-btn-cancel" id="wbeDelete" style="display:none;color:var(--error)">删除</button>
+      <div style="flex:1"></div>
+      <button class="settings-btn-cancel" id="wbeCancel">取消</button>
+      <button class="settings-btn-primary" id="wbeSave">保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // CDN 加载检测 — 只在真正失败时显示
 window.addEventListener('DOMContentLoaded', () => {
@@ -2112,7 +2215,7 @@ class ConvNode {
   }
 }
 class ConvTree {
-  constructor() { this.nodes = new Map(); this.activeLeafId = null; this.convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); }
+  constructor() { this.nodes = new Map(); this.activeLeafId = null; this.convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6); this.summary = ''; }
   add(role, content, parentId = null) {
     const id = 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
     const node = new ConvNode(id, role, content, parentId);
@@ -2157,7 +2260,10 @@ class ConvTree {
     }
     if (this.activeLeafId && toDelete.includes(this.activeLeafId)) {
       let cur = node.parentId;
-      while (cur && !this.nodes.has(cur)) cur = this.nodes.get(cur)?.parentId;
+      while (cur && !this.nodes.has(cur)) {
+        const parent = this.nodes.get(cur);
+        cur = parent ? parent.parentId : null;
+      }
       this.activeLeafId = cur;
     }
   }
@@ -2169,7 +2275,7 @@ class ConvTree {
     return this.activeBranch().filter(n => n.role !== 'system').map(n => ({ role: n.role, content: n.content }));
   }
   toJSON() {
-    return { convId: this.convId, nodes: Array.from(this.nodes.entries()).map(([id, n]) => [id, { ...n, children: [...n.children] }]), activeLeafId: this.activeLeafId };
+    return { convId: this.convId, nodes: Array.from(this.nodes.entries()).map(([id, n]) => [id, { ...n, children: [...n.children] }]), activeLeafId: this.activeLeafId, summary: this.summary || '' };
   }
   fromJSON(data) {
     this.nodes.clear();
@@ -2183,6 +2289,7 @@ class ConvTree {
     }
     this.activeLeafId = data.activeLeafId || (data.nodes?.length ? data.nodes[data.nodes.length - 1][0] : null);
     this.convId = data.convId || ('conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+    this.summary = data.summary || '';
   }
 }
 
@@ -2284,8 +2391,9 @@ document.addEventListener('DOMContentLoaded', () => {
     apiBaseUrl: 'https://api.doubao.com/v1', apiKey: '', modelName: 'doubao-pro-32k',
     systemPrompt: '你是一个乐于助人的AI助手，回答尽可能使用LaTeX公式。',
     prefixPrompt: '', suffixPrompt: '', temperature: 0.7, maxContextRounds: 20,
-    theme: 0, autoScroll: true, globalMemory: '', searchApiUrl: '', searchEnabled: false,
-    thinkingEnabled: false, thinkingPrompt: ''
+    theme: 0, autoScroll: true, globalMemory: '', globalCoreMemory: '', globalNotes: '',
+    searchApiUrl: '', searchEnabled: false,
+    thinkingEnabled: false, thinkingPrompt: '', worldBook: []
   };
   let currentTheme = settings.theme ?? 0;
 
@@ -2318,6 +2426,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($('maxContextRounds')) $('maxContextRounds').value = settings.maxContextRounds;
   if (autoScrollCheckbox) autoScrollCheckbox.checked = settings.autoScroll !== false;
   if (globalMemoryInput) globalMemoryInput.value = settings.globalMemory || '';
+  // Load tier values
+  const gci = $('globalCoreMemoryInput');
+  const gni = $('globalNotesInput');
+  if (gci) gci.value = settings.globalCoreMemory || settings.globalMemory || '';
+  if (gni) gni.value = settings.globalNotes || '';
   if ($('searchApiUrl')) $('searchApiUrl').value = settings.searchApiUrl || '';
   if ($('searchEnabled')) $('searchEnabled').checked = settings.searchEnabled || false;
   isSearchMode = settings.searchEnabled || false;
@@ -2337,10 +2450,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 记忆面板
+  const hasAnyMemory = settings.globalCoreMemory || settings.globalNotes;
   if (memoryBtn) memoryBtn.addEventListener('click', () => { if (memoryPanel) memoryPanel.classList.toggle('open'); });
-  if (memoryPanel && !settings.globalMemory) memoryPanel.classList.remove('open');
+  if (memoryPanel && !hasAnyMemory) memoryPanel.classList.remove('open');
+
+  // Tier tab switching
+  document.querySelectorAll('.memory-tier-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tier = tab.dataset.tier;
+      tab.parentElement.querySelectorAll('.memory-tier-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const isNotes = tier.endsWith('Notes');
+      $('globalCoreMemoryInput').style.display = isNotes ? 'none' : '';
+      $('globalNotesInput').style.display = isNotes ? '' : 'none';
+      $('globalNotesActions').style.display = isNotes ? '' : 'none';
+    });
+  });
+
   if (saveMemoryBtn) saveMemoryBtn.addEventListener('click', () => {
-    const newMem = globalMemoryInput?.value.trim() || '';
+    const coreVal = $('globalCoreMemoryInput')?.value.trim() || '';
+    const notesVal = $('globalNotesInput')?.value.trim() || '';
+    const newMem = [coreVal, notesVal].filter(Boolean).join('\n');
     const oldMem = settings.globalMemory || '';
     const conflicts = detectMemoryConflict(oldMem, newMem);
     if (conflicts && memoryConflictAlert) {
@@ -2351,9 +2481,195 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (memoryConflictAlert) {
       memoryConflictAlert.classList.remove('show');
     }
+    settings.globalCoreMemory = coreVal;
+    settings.globalNotes = notesVal;
     settings.globalMemory = newMem;
     localStorage.setItem('aiSettings', JSON.stringify(settings));
-    showToast('全局记忆已保存', 'success');
+    showToast('记忆已保存', 'success');
+  });
+
+  // Promote notes to core
+  $('globalPromoteBtn')?.addEventListener('click', () => {
+    const notes = $('globalNotesInput')?.value.trim() || '';
+    if (!notes) { showToast('临时笔记为空', 'error'); return; }
+    const core = $('globalCoreMemoryInput')?.value.trim() || '';
+    $('globalCoreMemoryInput').value = core ? core + '\n' + notes : notes;
+    $('globalNotesInput').value = '';
+    settings.globalCoreMemory = $('globalCoreMemoryInput').value.trim();
+    settings.globalNotes = '';
+    settings.globalMemory = [settings.globalCoreMemory, settings.globalNotes].filter(Boolean).join('\n');
+    localStorage.setItem('aiSettings', JSON.stringify(settings));
+    showToast('已提升为核心记忆');
+  });
+
+  // Clear notes
+  $('globalClearNotesBtn')?.addEventListener('click', () => {
+    if (!$('globalNotesInput')?.value.trim()) { showToast('笔记已为空'); return; }
+    $('globalNotesInput').value = '';
+    settings.globalNotes = '';
+    settings.globalMemory = [settings.globalCoreMemory, settings.globalNotes].filter(Boolean).join('\n');
+    localStorage.setItem('aiSettings', JSON.stringify(settings));
+    showToast('临时笔记已清空');
+  });
+
+  // Extract memory from conversation
+  const extractMemoryBtn = document.getElementById('extractMemoryBtn');
+  if (extractMemoryBtn) extractMemoryBtn.addEventListener('click', async () => {
+    const branch = convTree.activeBranch();
+    const userMsgs = branch.filter(n => n.role === 'user');
+    if (userMsgs.length < 2) { showToast('对话内容太少，无法提取记忆', 'error'); return; }
+    const recentMsgs = branch.slice(-10).map(n => `${n.role === 'user' ? '用户' : 'AI'}：${(n.content || '').slice(0, 200)}`).join('\n');
+    const extractPrompt = `分析以下对话，提取关于用户的关键信息（姓名、偏好、职业、重要事件、习惯等），用简洁的条目格式输出，每条一行。不要输出对话内容本身，只输出提取的事实。\n\n对话内容：\n${recentMsgs}`;
+    try {
+      showToast('正在提取记忆...', 'info');
+      const resp = await fetch(`${settings.apiBaseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` },
+        body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: extractPrompt }], temperature: 0.3, max_tokens: 500 })
+      });
+      if (!resp.ok) throw new Error('API error');
+      const data = await resp.json();
+      const extracted = data.choices?.[0]?.message?.content?.trim();
+      if (extracted) {
+        const existing = settings.globalNotes || '';
+        settings.globalNotes = existing ? existing + '\n' + extracted : extracted;
+        settings.globalMemory = [settings.globalCoreMemory, settings.globalNotes].filter(Boolean).join('\n');
+        const gni = $('globalNotesInput');
+        if (gni) gni.value = settings.globalNotes;
+        localStorage.setItem('aiSettings', JSON.stringify(settings));
+        showToast('记忆已提取到临时笔记');
+      }
+    } catch(e) { showToast('提取失败: ' + e.message, 'error'); }
+  });
+
+  // ===== World Book =====
+  const worldBookBtn = document.getElementById('worldBookBtn');
+  const worldBookModal = document.getElementById('worldBookModal');
+  const wbBody = document.getElementById('wbBody');
+  const wbClose = document.getElementById('wbClose');
+  const wbAddBtn = document.getElementById('wbAddBtn');
+  const wbEditorModal = document.getElementById('wbEditorModal');
+  const wbEditorClose = document.getElementById('wbEditorClose');
+  const wbEditorTitle = document.getElementById('wbEditorTitle');
+  const wbeName = document.getElementById('wbeName');
+  const wbeKeywords = document.getElementById('wbeKeywords');
+  const wbeContent = document.getElementById('wbeContent');
+  const wbeAlways = document.getElementById('wbeAlways');
+  const wbeDelete = document.getElementById('wbeDelete');
+  const wbeCancel = document.getElementById('wbeCancel');
+  const wbeSave = document.getElementById('wbeSave');
+  let editingWbIdx = null;
+
+  function renderWorldBook() {
+    if (!wbBody) return;
+    if (!settings.worldBook?.length) {
+      wbBody.innerHTML = '<div style="text-align:center;color:var(--ink-muted);font-size:.78rem;padding:20px">世界书为空，添加条目来丰富你的世界</div>';
+      return;
+    }
+    wbBody.innerHTML = settings.worldBook.map((entry, i) => `
+      <div class="worldbook-entry">
+        <div class="worldbook-entry-header">
+          <span class="worldbook-entry-title">${escapeHtml(entry.name)}</span>
+          <div class="worldbook-entry-actions">
+            <button class="wb-act" data-edit="${i}" title="编辑"><i class="fa fa-pencil"></i></button>
+            <button class="wb-act del" data-del="${i}" title="删除"><i class="fa fa-trash-o"></i></button>
+          </div>
+        </div>
+        <div class="worldbook-keywords">
+          ${entry.keywords.map(k => `<span class="wb-kw">${escapeHtml(k)}</span>`).join('')}
+          ${entry.always ? '<span class="wb-kw" style="background:var(--success-bg);color:var(--success);border-color:rgba(22,163,74,.15)">常驻</span>' : ''}
+        </div>
+        <div class="worldbook-content">${escapeHtml(entry.content)}</div>
+      </div>
+    `).join('');
+
+    wbBody.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => openWbEditor(parseInt(btn.dataset.edit)));
+    });
+    wbBody.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('确定删除此条目？')) {
+          settings.worldBook.splice(parseInt(btn.dataset.del), 1);
+          localStorage.setItem('aiSettings', JSON.stringify(settings));
+          renderWorldBook();
+          showToast('条目已删除');
+        }
+      });
+    });
+  }
+
+  function openWbEditor(idx) {
+    editingWbIdx = idx != null ? idx : null;
+    const entry = editingWbIdx != null ? settings.worldBook[editingWbIdx] : null;
+    wbEditorTitle.textContent = entry ? '编辑条目' : '添加世界书条目';
+    wbeName.value = entry?.name || '';
+    wbeKeywords.value = entry?.keywords?.join(', ') || '';
+    wbeContent.value = entry?.content || '';
+    wbeAlways.checked = entry?.always || false;
+    wbeDelete.style.display = entry ? 'block' : 'none';
+    worldBookModal?.classList.remove('show');
+    wbEditorModal?.classList.add('show');
+  }
+
+  function saveWbEntry() {
+    const name = wbeName.value.trim();
+    if (!name) { showToast('请输入条目名称', 'error'); return; }
+    const data = {
+      name,
+      keywords: wbeKeywords.value.split(',').map(k => k.trim()).filter(Boolean),
+      content: wbeContent.value.trim(),
+      always: wbeAlways.checked
+    };
+    if (!settings.worldBook) settings.worldBook = [];
+    if (editingWbIdx != null) {
+      settings.worldBook[editingWbIdx] = { ...settings.worldBook[editingWbIdx], ...data };
+    } else {
+      settings.worldBook.push(data);
+    }
+    localStorage.setItem('aiSettings', JSON.stringify(settings));
+    wbEditorModal?.classList.remove('show');
+    renderWorldBook();
+    showToast(editingWbIdx != null ? '条目已更新' : '条目已添加');
+  }
+
+  function deleteWbEntry() {
+    if (editingWbIdx != null) {
+      settings.worldBook.splice(editingWbIdx, 1);
+      localStorage.setItem('aiSettings', JSON.stringify(settings));
+      wbEditorModal?.classList.remove('show');
+      renderWorldBook();
+      showToast('条目已删除');
+    }
+  }
+
+  function buildWorldBookInjection(userMessage) {
+    if (!settings.worldBook?.length) return '';
+    const matched = settings.worldBook.filter(entry => {
+      if (entry.always || !entry.keywords.length) return false;
+      return entry.keywords.some(kw => userMessage.includes(kw));
+    });
+    // Always-on entries
+    const alwaysEntries = settings.worldBook.filter(e => e.always && e.content);
+    const allEntries = [...alwaysEntries, ...matched.filter(e => !e.always)];
+    if (!allEntries.length) return '';
+    return '\n\n【相关世界知识】\n' + allEntries.map(e => `${e.name}：${e.content}`).join('\n');
+  }
+
+  if (worldBookBtn) worldBookBtn.addEventListener('click', () => { renderWorldBook(); worldBookModal?.classList.add('show'); });
+  if (wbClose) wbClose.addEventListener('click', () => worldBookModal?.classList.remove('show'));
+  if (worldBookModal) worldBookModal.onclick = (e) => e.target === worldBookModal && worldBookModal.classList.remove('show');
+  if (wbAddBtn) wbAddBtn.addEventListener('click', () => openWbEditor(null));
+  if (wbEditorClose) wbEditorClose.addEventListener('click', () => { wbEditorModal?.classList.remove('show'); worldBookModal?.classList.add('show'); });
+  if (wbeCancel) wbeCancel.addEventListener('click', () => { wbEditorModal?.classList.remove('show'); worldBookModal?.classList.add('show'); });
+  if (wbeSave) wbeSave.addEventListener('click', saveWbEntry);
+  if (wbeDelete) wbeDelete.addEventListener('click', deleteWbEntry);
+  if (wbEditorModal) wbEditorModal.onclick = (e) => { if (e.target === wbEditorModal) { wbEditorModal.classList.remove('show'); worldBookModal?.classList.add('show'); } };
+
+  // Summarize conversation button
+  $('summarizeBtn')?.addEventListener('click', async () => {
+    const branch = convTree.activeBranch();
+    if (branch.length < 6) { showToast('对话内容太少，无需总结', 'error'); return; }
+    await summarizeConversation();
   });
 
   function saveTree() { localStorage.setItem('convTree', JSON.stringify(convTree.toJSON())); }
@@ -2361,6 +2677,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const saved = localStorage.getItem('convTree');
     if (saved) { try { convTree.fromJSON(JSON.parse(saved)); renderBranch(); } catch(e) { console.error('加载失败', e); showWelcomeState(); } }
     else { showWelcomeState(); }
+  }
+
+  // Conversation summary
+  const SUMMARY_THRESHOLD = 30;
+  const SUMMARY_KEEP = 10;
+
+  async function summarizeConversation() {
+    const branch = convTree.activeBranch();
+    const userMsgs = branch.filter(n => n.role === 'user');
+    if (branch.length < SUMMARY_THRESHOLD) return false;
+    const toSummarize = branch.slice(0, -SUMMARY_KEEP);
+    const summaryInput = toSummarize.map(n => {
+      const speaker = n.role === 'user' ? '用户' : 'AI';
+      return `${speaker}：${(n.content || '').slice(0, 300)}`;
+    }).join('\n');
+    const summaryPrompt = `请用简洁的中文总结以下对话的关键信息（人物、事件、情感、重要决定等），控制在200字以内，保留所有对后续剧情重要的细节。不要添加对话中没有的信息。\n\n对话内容：\n${summaryInput}`;
+    try {
+      showToast('正在总结对话...', 'info');
+      const resp = await fetch(`${settings.apiBaseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` },
+        body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: summaryPrompt }], temperature: 0.3, max_tokens: 500 })
+      });
+      if (!resp.ok) throw new Error('API error');
+      const data = await resp.json();
+      const newSummary = data.choices?.[0]?.message?.content?.trim();
+      if (newSummary) {
+        convTree.summary = convTree.summary ? convTree.summary + '\n' + newSummary : newSummary;
+        // Remove summarized nodes (keep last SUMMARY_KEEP)
+        const keepNodes = branch.slice(-SUMMARY_KEEP);
+        const keepIds = new Set(keepNodes.map(n => n.id));
+        // Delete nodes not in keep set (from leaf backwards)
+        const toDelete = branch.filter(n => !keepIds.has(n.id));
+        toDelete.reverse().forEach(n => convTree.deleteFrom(n.id));
+        saveTree();
+        renderBranch();
+        showToast('对话已自动总结');
+        return true;
+      }
+    } catch(e) { console.error('Summarize failed:', e); }
+    return false;
   }
   function addWelcomeMessage() {
     convTree.add('assistant', '你好！我是星云AI。<br><br>快捷键：<kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">/</kbd> 查看全部');
@@ -2401,6 +2758,20 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderBranch() {
     if (!chatContainer) return;
     chatContainer.innerHTML = '';
+    // Show summary indicator if available
+    if (convTree.summary) {
+      const summaryDiv = document.createElement('div');
+      summaryDiv.className = 'message summary-indicator';
+      summaryDiv.innerHTML = `
+        <div class="avatar ai-avatar" style="background:var(--primary-soft);color:var(--primary)"><i class="fa fa-compress"></i></div>
+        <div class="msg-body">
+          <div class="msg-name" style="color:var(--ink-muted)">对话摘要</div>
+          <div class="msg-bubble ai-bubble" style="background:var(--primary-soft);border:1px dashed var(--primary)">
+            <div class="msg-content" style="font-size:.8rem;color:var(--ink-2);max-height:80px;overflow-y:auto">${safeRender(convTree.summary)}</div>
+          </div>
+        </div>`;
+      chatContainer.appendChild(summaryDiv);
+    }
     const branch = convTree.activeBranch();
     branch.forEach(node => {
       if (node.role === 'system') return;
@@ -2503,6 +2874,128 @@ document.addEventListener('DOMContentLoaded', () => {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `星云AI_${new Date().toISOString().slice(0,10)}.md`; a.click();
   };
 
+  // DOM elements for new features
+  const sidebarImportBtn = document.getElementById('sidebarImportBtn');
+  const importFileInput = document.getElementById('importFileInput');
+  const searchInput = document.getElementById('searchInput');
+  const profileSelect = document.getElementById('profileSelect');
+  const saveProfileBtn = document.getElementById('saveProfileBtn');
+  const deleteProfileBtn = document.getElementById('deleteProfileBtn');
+
+  // 导入对话
+  if (sidebarImportBtn) sidebarImportBtn.onclick = () => importFileInput?.click();
+  if (importFileInput) importFileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target.result;
+        if (file.name.endsWith('.json')) {
+          // JSON import: full state restore
+          const data = JSON.parse(text);
+          if (data.convTree) {
+            localStorage.setItem('convTree', JSON.stringify(data.convTree));
+          }
+          if (data.settings) {
+            Object.assign(settings, data.settings);
+            localStorage.setItem('aiSettings', JSON.stringify(settings));
+          }
+          // Import individual conversations
+          if (data.conversations) {
+            for (const [key, val] of Object.entries(data.conversations)) {
+              localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
+            }
+          }
+          location.reload();
+        } else {
+          showToast('仅支持 JSON 格式导入', 'error');
+        }
+      } catch(err) {
+        showToast('导入失败: ' + err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  // 对话搜索
+  let searchTimeout;
+  if (searchInput) searchInput.oninput = (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      const query = e.target.value.trim().toLowerCase();
+      if (!chatHistoryList) return;
+      const items = chatHistoryList.querySelectorAll('.chat-history-item');
+      items.forEach(item => {
+        const text = item.querySelector('.item-text')?.textContent || '';
+        item.style.display = !query || text.toLowerCase().includes(query) ? '' : 'none';
+      });
+    }, 200);
+  };
+
+  // API 配置方案
+  const apiProfiles = JSON.parse(localStorage.getItem('xingyunApiProfiles') || '[]');
+  let currentProfileId = localStorage.getItem('xingyunCurrentProfileId') || '';
+
+  function renderProfileList() {
+    const sel = document.getElementById('profileSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">当前配置</option>' +
+      apiProfiles.map(p => `<option value="${p.id}" ${p.id === currentProfileId ? 'selected' : ''}>${p.name}</option>`).join('');
+  }
+
+  function saveCurrentAsProfile() {
+    const name = prompt('方案名称：');
+    if (!name) return;
+    const profile = {
+      id: 'profile_' + Date.now(),
+      name,
+      provider: providerSelect?.value || '',
+      apiKey: document.getElementById('apiKey')?.value || '',
+      modelName: document.getElementById('modelName')?.value || ''
+    };
+    apiProfiles.push(profile);
+    currentProfileId = profile.id;
+    localStorage.setItem('xingyunApiProfiles', JSON.stringify(apiProfiles));
+    localStorage.setItem('xingyunCurrentProfileId', currentProfileId);
+    renderProfileList();
+    showToast('方案已保存');
+  }
+
+  function loadProfile(id) {
+    if (!id) { currentProfileId = ''; localStorage.removeItem('xingyunCurrentProfileId'); return; }
+    const profile = apiProfiles.find(p => p.id === id);
+    if (!profile) return;
+    currentProfileId = id;
+    localStorage.setItem('xingyunCurrentProfileId', currentProfileId);
+    // Update UI
+    if (providerSelect) providerSelect.value = profile.provider;
+    const apiKeyEl = document.getElementById('apiKey');
+    if (apiKeyEl) apiKeyEl.value = profile.apiKey;
+    const modelNameEl = document.getElementById('modelName');
+    if (modelNameEl) modelNameEl.value = profile.modelName;
+    // Trigger provider change to update base URL
+    if (providerSelect) providerSelect.dispatchEvent(new Event('change'));
+    showToast('已加载方案: ' + profile.name);
+  }
+
+  function deleteProfile() {
+    if (!currentProfileId) { showToast('请先选择一个方案', 'error'); return; }
+    const profile = apiProfiles.find(p => p.id === currentProfileId);
+    if (!profile || !confirm(`确定删除方案「${profile.name}」？`)) return;
+    apiProfiles.splice(apiProfiles.indexOf(profile), 1);
+    currentProfileId = '';
+    localStorage.setItem('xingyunApiProfiles', JSON.stringify(apiProfiles));
+    localStorage.removeItem('xingyunCurrentProfileId');
+    renderProfileList();
+    showToast('方案已删除');
+  }
+
+  if (profileSelect) profileSelect.onchange = function() { loadProfile(this.value); };
+  if (saveProfileBtn) saveProfileBtn.onclick = saveCurrentAsProfile;
+  if (deleteProfileBtn) deleteProfileBtn.onclick = deleteProfile;
+
   // 聊天提交
   if (chatForm) chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -2524,7 +3017,13 @@ document.addEventListener('DOMContentLoaded', () => {
       abortController = new AbortController();
       const reqMessages = [];
       let systemContent = (settings.systemPrompt || '').trim();
-      if (settings.globalMemory) systemContent += `\n\n[用户重要信息]：${settings.globalMemory}`;
+      if (settings.globalCoreMemory) systemContent += `\n\n[用户核心记忆]：${settings.globalCoreMemory}`;
+      if (settings.globalNotes) systemContent += `\n\n[用户近期笔记]：${settings.globalNotes}`;
+      // Inject conversation summary if available
+      if (convTree.summary) systemContent += `\n\n[之前对话摘要]：${convTree.summary}`;
+      // World book injection based on last user message
+      const lastUserInBranch = convTree.activeBranch().filter(n => n.role === 'user').pop();
+      if (lastUserInBranch) systemContent += buildWorldBookInjection(lastUserInBranch.content);
 
       let searchResults = '';
       if (isSearchMode && settings.searchApiUrl) {
@@ -2567,10 +3066,38 @@ document.addEventListener('DOMContentLoaded', () => {
       const trimmed = history.length > maxMsgs ? history.slice(-maxMsgs) : history;
       reqMessages.push(...trimmed);
 
-      const resp = await fetch(`${settings.apiBaseUrl}/chat/completions`, {
+      // Build request based on provider format
+      const isClaude = currentProvider === 'claude';
+      let reqUrl, reqHeaders, reqBody;
+
+      if (isClaude) {
+        // Anthropic API format
+        reqUrl = `${settings.apiBaseUrl}/messages`;
+        const systemMsg = reqMessages.find(m => m.role === 'system');
+        const claudeMessages = reqMessages.filter(m => m.role !== 'system');
+        reqHeaders = {
+          'Content-Type': 'application/json',
+          'x-api-key': settings.apiKey,
+          'anthropic-version': '2023-06-01'
+        };
+        reqBody = {
+          model: settings.modelName,
+          max_tokens: 4096,
+          messages: claudeMessages,
+          stream: true
+        };
+        if (systemMsg) reqBody.system = systemMsg.content;
+      } else {
+        // OpenAI-compatible format (DeepSeek, OpenAI, Qwen, Doubao, Ollama)
+        reqUrl = `${settings.apiBaseUrl}/chat/completions`;
+        reqHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` };
+        reqBody = { model: settings.modelName, messages: reqMessages, temperature: parseFloat(settings.temperature), stream: true, max_tokens: 4096 };
+      }
+
+      const resp = await fetch(reqUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` },
-        body: JSON.stringify({ model: settings.modelName, messages: reqMessages, temperature: parseFloat(settings.temperature), stream: true, max_tokens: 4096 }),
+        headers: reqHeaders,
+        body: JSON.stringify(reqBody),
         signal: abortController.signal
       });
 
@@ -2590,10 +3117,23 @@ document.addEventListener('DOMContentLoaded', () => {
           if (data === '[DONE]') continue;
           try {
             const parsed = JSON.parse(data);
-            const delta = parsed.choices?.[0]?.delta || {};
+
+            let content = '', reasoning = '';
+
+            if (isClaude) {
+              // Anthropic streaming format
+              if (parsed.type === 'content_block_delta') {
+                if (parsed.delta?.type === 'text_delta') content = parsed.delta.text || '';
+                if (parsed.delta?.type === 'thinking_delta') reasoning = parsed.delta.thinking || '';
+              }
+            } else {
+              // OpenAI-compatible format
+              const delta = parsed.choices?.[0]?.delta || {};
+              reasoning = delta.reasoning_content || delta.reasoning || delta.thinking || '';
+              content = delta.content || parsed.choices?.[0]?.text || parsed.content?.[0]?.text || '';
+            }
 
             // 解析 reasoning_content（DeepSeek R1 等原生推理模型）
-            const reasoning = delta.reasoning_content || delta.reasoning || delta.thinking || '';
             if (reasoning) {
               fullThinking += reasoning;
               const thinkDiv = aiEl.querySelector('.thinking-content');
@@ -2606,7 +3146,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // 解析普通 content
-            const content = delta.content || parsed.choices?.[0]?.text || parsed.content?.[0]?.text || '';
             if (content) {
               // 思考完成，更新状态
               if (fullThinking && aiEl.querySelector('.thinking-status')) {
@@ -2635,6 +3174,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (node && fullThinking) node.thinking = fullThinking;
         saveTree(); renderBranch();
         if (typeof recordCurrentConv === 'function') recordCurrentConv();
+        // Auto-summarize when conversation gets too long
+        if (convTree.activeBranch().length >= SUMMARY_THRESHOLD) {
+          summarizeConversation();
+        }
       }
     } catch(err) {
       if (err.name !== 'AbortError') {
@@ -2693,7 +3236,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (stopBtn) stopBtn.onclick = () => abortController?.abort();
   if (clearBtn) clearBtn.onclick = () => { if (confirm('确定清空所有对话？')) { recordCurrentConv(); convTree.nodes.clear(); convTree.activeLeafId = null; saveTree(); addWelcomeMessage(); } };
   if (themeBtn) themeBtn.onclick = () => { currentTheme = (currentTheme + 1) % 4; applyTheme(currentTheme); settings.theme = currentTheme; localStorage.setItem('aiSettings', JSON.stringify(settings)); };
-  if (settingsBtn) settingsBtn.onclick = () => settingsModal?.classList.add('show');
+  if (settingsBtn) settingsBtn.onclick = () => { renderProfileList(); settingsModal?.classList.add('show'); };
   if (closeSettingsBtn) closeSettingsBtn.onclick = () => settingsModal?.classList.remove('show');
   if (settingsModal) settingsModal.onclick = (e) => e.target === settingsModal && settingsModal.classList.remove('show');
 
@@ -2857,6 +3400,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modelIndicator = document.getElementById('modelIndicator');
   if (modelIndicator) {
     modelIndicator.addEventListener('click', () => {
+      renderProfileList();
       settingsModal?.classList.add('show');
       document.querySelector('.settings-tab[data-tab="model"]')?.click();
     });
@@ -2874,7 +3418,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof data === 'string') return data;
     if (Array.isArray(data)) return data.filter(item => item && typeof item === 'object').map((item, i) => `${i + 1}. ${item.title || ''}: ${item.snippet || item.content || ''}`).join('\n');
     if (data.results && Array.isArray(data.results)) return formatSearchResults(data.results);
-    return typeof data === 'string' ? data.slice(0, 2000) : JSON.stringify(data).slice(0, 2000);
+    return JSON.stringify(data).slice(0, 2000);
   }
 
   if (branchBtn) branchBtn.onclick = () => { renderBranchTree(); branchModal?.classList.add('show'); };
@@ -3071,7 +3615,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // 侧边栏底部按钮
-  if (sidebarSettingsBtn) sidebarSettingsBtn.onclick = () => settingsModal?.classList.add('show');
+  if (sidebarSettingsBtn) sidebarSettingsBtn.onclick = () => { renderProfileList(); settingsModal?.classList.add('show'); };
   if (sidebarExportBtn) sidebarExportBtn.onclick = () => exportBtn?.click();
   if (sidebarShortcutBtn) sidebarShortcutBtn.onclick = () => shortcutModal?.classList.add('show');
 
@@ -3089,6 +3633,23 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  // ========== PocketBase 自动连接 ==========
+  try {
+    const defaultPbUrl = 'http://127.0.0.1:8090';
+    const savedPbUrl = localStorage.getItem('xingyun_pb_url') || defaultPbUrl;
+    initPocketBase(savedPbUrl);
+  } catch(e) { console.error('PocketBase auto-init failed:', e); }
+
+  // ========== 可视化模式分支切换 ==========
+  window.switchBranch = function(nodeId) {
+    if (!convTree) return;
+    convTree.activeLeafId = nodeId;
+    saveTree();
+    renderBranch();
+    document.getElementById('visualModal')?.classList.remove('show');
+    showToast('已切换到分支', 'info');
+  };
+
 });
 
 // ========== PocketBase 云端同步 ==========
@@ -3096,19 +3657,14 @@ let pb = null;
 let currentUser = null;
 
 function initPocketBase(url) {
-  if (!window.PocketBase) { showToast('PocketBase SDK 未加载', 'error'); return false; }
+  if (!window.PocketBase) return false;
   try {
     pb = new PocketBase(url);
     pb.autoCancellation(false);
     localStorage.setItem('xingyun_pb_url', url);
     return true;
-  } catch (e) { showToast('PocketBase 连接失败: ' + e.message, 'error'); return false; }
+  } catch (e) { console.error('PocketBase init failed:', e); return false; }
 }
-
-// 尝试自动连接（默认连接本地 PocketBase）
-const defaultPbUrl = 'http://127.0.0.1:8090';
-const savedPbUrl = localStorage.getItem('xingyun_pb_url') || defaultPbUrl;
-initPocketBase(savedPbUrl);
 
 // 认证 UI
 const authModal = document.getElementById('authModal');
@@ -3296,15 +3852,6 @@ function renderVisualTree() {
   container.style.overflow = 'auto';
 }
 
-window.switchBranch = function(nodeId) {
-  if (!convTree) return;
-  convTree.activeLeafId = nodeId;
-  saveTree();
-  renderBranch();
-  visualModal?.classList.remove('show');
-  showToast('已切换到分支', 'info');
-};
-
 // ========== 文件上传 ==========
 const messageInput = document.getElementById('messageInput');
 if (messageInput) {
@@ -3362,7 +3909,7 @@ if (convSearchInput) {
     const query = e.target.value.toLowerCase();
     const items = document.querySelectorAll('.chat-history-item');
     items.forEach(item => {
-      const title = item.querySelector('.history-title')?.textContent?.toLowerCase() || '';
+      const title = item.querySelector('.item-text')?.textContent?.toLowerCase() || '';
       item.style.display = title.includes(query) ? '' : 'none';
     });
   });
