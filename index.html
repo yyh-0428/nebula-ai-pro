@@ -2574,9 +2574,10 @@ function initPocketBase(url) {
   } catch (e) { showToast('PocketBase 连接失败: ' + e.message, 'error'); return false; }
 }
 
-// 尝试自动连接
-const savedPbUrl = localStorage.getItem('xingyun_pb_url');
-if (savedPbUrl) initPocketBase(savedPbUrl);
+// 尝试自动连接（默认连接本地 PocketBase）
+const defaultPbUrl = 'http://127.0.0.1:8090';
+const savedPbUrl = localStorage.getItem('xingyun_pb_url') || defaultPbUrl;
+initPocketBase(savedPbUrl);
 
 // 认证 UI
 const authModal = document.getElementById('authModal');
