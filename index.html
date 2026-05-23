@@ -2126,12 +2126,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof katex !== 'undefined') window.katexOptions = { throwOnError: false, trust: true };
   marked.setOptions({ breaks: true, gfm: true });
 
+  function isKatexContent(text) {
+    // Skip if contains CJK characters or is just plain words
+    if (/[一-鿿㐀-䶿]/.test(text)) return false;
+    // Must contain at least one math-like character
+    return /[\\^_{}=+\-*/<>|()[\]!~]/.test(text) || /^\d/.test(text) || /[a-zA-Z]\(/.test(text);
+  }
   const inlineKatex = { name: 'inlineKatex', level: 'inline', start(src) { return src.indexOf('$'); },
-    tokenizer(src) { const m = src.match(/^\$([^$\n\r]{1,200})\$/); if (m) return { type: 'inlineKatex', raw: m[0], text: m[1].trim() }; },
+    tokenizer(src) { const m = src.match(/^\$([^$\n\r]{1,200})\$/); if (m && isKatexContent(m[1])) return { type: 'inlineKatex', raw: m[0], text: m[1].trim() }; },
     renderer(token) { try { return katex.renderToString(token.text, { ...window.katexOptions, displayMode: false }); } catch(e) { return `<code>$${token.text}$</code>`; } }
   };
   const blockKatex = { name: 'blockKatex', level: 'block', start(src) { return src.indexOf('$$'); },
-    tokenizer(src) { const m = src.match(/^\$\$\s*([\s\S]{1,1000}?)\s*\$\$/); if (m) return { type: 'blockKatex', raw: m[0], text: m[1].trim() }; },
+    tokenizer(src) { const m = src.match(/^\$\$\s*([\s\S]{1,1000}?)\s*\$\$/); if (m && isKatexContent(m[1])) return { type: 'blockKatex', raw: m[0], text: m[1].trim() }; },
     renderer(token) { try { return katex.renderToString(token.text, { ...window.katexOptions, displayMode: true }); } catch(e) { return `<pre><code>$$${token.text}$$</code></pre>`; } }
   };
   const parenInlineKatex = { name: 'parenInlineKatex', level: 'inline', start(src) { return src.indexOf('\\('); },
