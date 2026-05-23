@@ -1643,17 +1643,15 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
 <script>
 // CDN 加载检测 — 只在真正失败时显示
 window.addEventListener('DOMContentLoaded', () => {
-  // 标记 CDN 已成功加载
-  if (typeof marked !== 'undefined' && typeof hljs !== 'undefined' && typeof hljs.getLanguage === 'function') {
-    window._cdnDone = true;
-    const fb = document.getElementById('cdnFallback');
-    if (fb) fb.classList.remove('show');
-  }
-  // 备用：8秒后如果 CDN 还没加载完也显示
+  // 备用：8秒后如果 CDN 还没加载完才显示错误
   setTimeout(() => {
-    if (!window._cdnDone) {
+    if (typeof marked === 'undefined' || typeof hljs === 'undefined') {
       const fb = document.getElementById('cdnFallback');
       if (fb) fb.classList.add('show');
+    } else {
+      window._cdnDone = true;
+      const fb = document.getElementById('cdnFallback');
+      if (fb) fb.classList.remove('show');
     }
   }, 8000);
 });
@@ -1706,16 +1704,19 @@ class ConvTree {
   activeBranch() { return this.activeLeafId ? this.pathTo(this.activeLeafId) : []; }
   branchFrom(nodeId, newContent) {
     const orig = this.nodes.get(nodeId); if (!orig) return null;
-    if (orig.parentId) {
-      const p = this.nodes.get(orig.parentId);
-      const idx = p.children.indexOf(nodeId);
-      if (idx !== -1) p.children.splice(idx, 1);
-    }
     const newId = this.add(orig.role, newContent, orig.parentId);
     const newNode = this.nodes.get(newId);
     newNode.thinking = orig.thinking;
+    if (orig.parentId) {
+      const p = this.nodes.get(orig.parentId);
+      if (p) {
+        const idx = p.children.indexOf(nodeId);
+        if (idx !== -1) p.children.splice(idx, 1);
+      }
+    }
     newNode.children = [...orig.children];
     orig.children.forEach(cid => { const c = this.nodes.get(cid); if (c) c.parentId = newId; });
+    orig.children = [];
     this.activeLeafId = newId;
     return newId;
   }
@@ -1851,6 +1852,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let abortController = null, isGenerating = false, isSearchMode = false, isThinkingMode = false;
   const convTree = new ConvTree();
 
+  // 记录当前对话到历史（提前定义，供多处调用）
+  function recordCurrentConv() {
+    const branch = convTree.activeBranch();
+    const firstUser = branch.find(n => n.role === 'user');
+    const title = firstUser ? firstUser.content.slice(0, 30) : '新对话';
+    addConvToList(convTree.convId, title);
+    localStorage.setItem(convTree.convId, JSON.stringify(convTree.toJSON()));
+  }
+
   let settings = JSON.parse(localStorage.getItem('aiSettings')) || {
     apiBaseUrl: 'https://api.doubao.com/v1', apiKey: '', modelName: 'doubao-pro-32k',
     systemPrompt: '你是一个乐于助人的AI助手，回答尽可能使用LaTeX公式。',
@@ -1985,7 +1995,7 @@ document.addEventListener('DOMContentLoaded', () => {
     div.dataset.nodeId = node.id;
     const hasBranches = convTree.getSiblings(node.id).length > 0 || node.children.length > 1;
     if (hasBranches) div.classList.add('has-branches');
-    const escaped = node.content.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const escaped = node.content.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#39;');
     const isUser = node.role === 'user';
     const thinkingHtml = (!isUser && node.thinking) ? `<details class="thinking-block"><summary><i class="fa fa-lightbulb-o"></i> 深度思考<span class="thinking-status">思考完成</span></summary><div class="thinking-content">${marked.parse(node.thinking)}</div></details>` : '';
     div.innerHTML = `
@@ -2148,12 +2158,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const reader = resp.body.getReader(), decoder = new TextDecoder();
       const aiEl = createEmptyAIMessage();
       let full = '', fullThinking = '';
+      let sseBuffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n').filter(l => l.trim())) {
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop(); // keep incomplete last line in buffer
+        for (const line of lines.filter(l => l.trim())) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6);
           if (data === '[DONE]') continue;
@@ -2305,10 +2318,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchToggleBtn) searchToggleBtn.onclick = () => { isSearchMode = !isSearchMode; updateSearchUI(); };
 
   function formatSearchResults(data) {
-    if (typeof data === 'string') return data;
+    if (typeof data === 'string') return data.slice(0, 2000);
     if (Array.isArray(data)) return data.filter(item => item && typeof item === 'object').map((item, i) => `${i + 1}. ${item.title || ''}: ${item.snippet || item.content || ''}`).join('\n');
     if (data.results && Array.isArray(data.results)) return formatSearchResults(data.results);
-    return typeof data === 'string' ? data.slice(0, 2000) : JSON.stringify(data).slice(0, 2000);
+    return JSON.stringify(data).slice(0, 2000);
   }
 
   if (branchBtn) branchBtn.onclick = () => { renderBranchTree(); branchModal?.classList.add('show'); };
@@ -2490,15 +2503,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   renderHistoryList();
-
-  // 记录当前对话到历史
-  function recordCurrentConv() {
-    const branch = convTree.activeBranch();
-    const firstUser = branch.find(n => n.role === 'user');
-    const title = firstUser ? firstUser.content.slice(0, 30) : '新对话';
-    addConvToList(convTree.convId, title);
-    localStorage.setItem(convTree.convId, JSON.stringify(convTree.toJSON()));
-  }
 
   // 新建对话
   if (newChatBtn) newChatBtn.onclick = () => {
