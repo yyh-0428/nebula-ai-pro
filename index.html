@@ -1762,7 +1762,7 @@ class ConvTree {
         this.nodes.set(id, node);
       });
     }
-    this.activeLeafId = data.activeLeafId || (data.nodes?.length ? data.nodes[data.nodes.length - 1][0] : null);
+    this.activeLeafId = data.activeLeafId && this.nodes.has(data.activeLeafId) ? data.activeLeafId : (data.nodes?.length ? data.nodes[data.nodes.length - 1][0] : null);
     this.convId = data.convId || ('conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
   }
 }
@@ -2010,7 +2010,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hasBranches) div.classList.add('has-branches');
     const escaped = node.content.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#39;');
     const isUser = node.role === 'user';
-    const thinkingHtml = (!isUser && node.thinking) ? `<details class="thinking-block"><summary><i class="fa fa-lightbulb-o"></i> 深度思考<span class="thinking-status">思考完成</span></summary><div class="thinking-content">${marked.parse(node.thinking)}</div></details>` : '';
+    const thinkingHtml = (!isUser && node.thinking) ? `<details class="thinking-block"><summary><i class="fa fa-lightbulb-o"></i> 深度思考<span class="thinking-status">思考完成</span></summary><div class="thinking-content">${sanitizeHtml(marked.parse(node.thinking))}</div></details>` : '';
     div.innerHTML = `
       <div class="avatar ${isUser ? 'user-avatar' : 'ai-avatar'}">${isUser ? '我' : 'AI'}</div>
       <div class="msg-body">
@@ -2084,6 +2084,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function escapeHtml(text) {
     const div = document.createElement('div'); div.textContent = text; return div.innerHTML;
+  }
+  function sanitizeHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    template.content.querySelectorAll('script,style,iframe,object,embed,form,input[onchange],img[onerror]').forEach(el => el.remove());
+    template.content.querySelectorAll('*').forEach(el => {
+      [...el.attributes].forEach(attr => { if (/^on/i.test(attr.name)) el.removeAttribute(attr.name); });
+    });
+    return template.innerHTML;
   }
 
   // 导出
@@ -2200,7 +2209,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const thinkDiv = aiEl.querySelector('.thinking-content');
               const thinkBlock = aiEl.querySelector('.thinking-block');
               const thinkStatus = aiEl.querySelector('.thinking-status');
-              if (thinkDiv) thinkDiv.innerHTML = marked.parse(fullThinking);
+              if (thinkDiv) thinkDiv.innerHTML = sanitizeHtml(marked.parse(fullThinking));
               if (thinkBlock) thinkBlock.classList.add('streaming');
               if (thinkStatus) thinkStatus.textContent = '思考中...';
               if (settings.autoScroll && chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
