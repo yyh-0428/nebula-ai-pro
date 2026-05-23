@@ -10,7 +10,7 @@
 <script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/highlight.min.js" onerror="_cdnErr()"></script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" onerror="_cdnErr()">
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css" onerror="_cdnErr()">
-<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js" onerror="_cdnErr()"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js?v=2" onerror="_cdnErr()"></script>
 <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.26.9/dist/pocketbase.umd.js" onerror="_cdnErr()"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" onerror="_cdnErr()"></script>
 <style>
@@ -2127,10 +2127,10 @@ document.addEventListener('DOMContentLoaded', () => {
   marked.setOptions({ breaks: true, gfm: true });
 
   function isKatexContent(text) {
-    // Skip if contains CJK characters or is just plain words
-    if (/[一-鿿㐀-䶿]/.test(text)) return false;
-    // Must contain at least one math-like character
-    return /[\\^_{}=+\-*/<>|()[\]!~]/.test(text) || /^\d/.test(text) || /[a-zA-Z]\(/.test(text);
+    // Skip if contains any CJK characters (Chinese/Japanese/Korean)
+    if (/[一-鿿㐀-䶿豈-﫿]/.test(text)) return false;
+    // Must contain LaTeX-specific syntax: backslash commands, braces, or superscript/subscript
+    return /\\[a-zA-Z]+/.test(text) || /[{}^_]/.test(text) || /\\/.test(text);
   }
   const inlineKatex = { name: 'inlineKatex', level: 'inline', start(src) { return src.indexOf('$'); },
     tokenizer(src) { const m = src.match(/^\$([^$\n\r]{1,200})\$/); if (m && isKatexContent(m[1])) return { type: 'inlineKatex', raw: m[0], text: m[1].trim() }; },
@@ -3062,7 +3062,8 @@ if (authSubmitBtn) authSubmitBtn.onclick = async () => {
     setTimeout(() => { authModal?.classList.remove('show'); updateAuthUI(); }, 800);
   } catch (e) {
     const msg = e?.response?.message || e?.message || '请检查邮箱和密码';
-    authStatus.textContent = '失败: ' + msg;
+    const hint = (!isRegisterMode && msg.includes('authenticate')) ? '（请先注册账号）' : '';
+    authStatus.textContent = '失败: ' + msg + hint;
     console.error('Auth error:', e);
   } finally { authSubmitBtn.disabled = false; }
 };
