@@ -1980,7 +1980,9 @@ function showToast(msg, type = 'info', duration = 2500) {
 function safeRender(content) {
   if (!content) return '';
   const html = marked.parse(content);
-  return (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(html) : html;
+  if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(html);
+  // Fallback: strip all HTML tags if DOMPurify unavailable
+  return html.replace(/<[^>]*>/g, '');
 }
 
 (() => {
@@ -2220,7 +2222,6 @@ document.addEventListener('DOMContentLoaded', () => {
   updateThinkingUI();
 
   function updateSearchUI() {
-    if (searchBtn) searchBtn.classList.toggle('active', isSearchMode);
     if (searchBtn) searchBtn.classList.toggle('active', isSearchMode);
   }
 
@@ -2991,8 +2992,8 @@ function initPocketBase(url) {
   if (!window.PocketBase) { showToast('PocketBase SDK 未加载', 'error'); return false; }
   try {
     pb = new PocketBase(url);
-    const saved = localStorage.getItem('xingyun_pb_url');
-    if (!saved) localStorage.setItem('xingyun_pb_url', url);
+    pb.autoCancellation(false);
+    localStorage.setItem('xingyun_pb_url', url);
     return true;
   } catch (e) { showToast('PocketBase 连接失败: ' + e.message, 'error'); return false; }
 }
@@ -3054,7 +3055,9 @@ if (authSubmitBtn) authSubmitBtn.onclick = async () => {
     currentUser = pb.authStore.record;
     setTimeout(() => { authModal?.classList.remove('show'); updateAuthUI(); }, 800);
   } catch (e) {
-    authStatus.textContent = '失败: ' + (e.message || '请检查邮箱和密码');
+    const msg = e?.response?.message || e?.message || '请检查邮箱和密码';
+    authStatus.textContent = '失败: ' + msg;
+    console.error('Auth error:', e);
   } finally { authSubmitBtn.disabled = false; }
 };
 
@@ -3082,14 +3085,11 @@ function renderVisualTree() {
   const nodes = Array.from(convTree.nodes.values());
   if (nodes.length === 0) { container.innerHTML = '<p style="padding:2rem;text-align:center;color:var(--ink-3)">暂无对话内容</p>'; return; }
 
-  // 构建可视化 SVG 树
-  const width = container.clientWidth || 1100;
-  const height = container.clientHeight || 600;
-  const nodeW = 180, nodeH = 60, gapX = 40, gapY = 80;
-
-  // 计算层级布局
+  const nodeW = 200, nodeH = 64, gapX = 32, gapY = 90;
   const levels = new Map();
   const positions = new Map();
+  const childMap = new Map();
+
   function getLevel(nodeId, visited = new Set()) {
     if (visited.has(nodeId)) return 0;
     visited.add(nodeId);
@@ -3097,52 +3097,95 @@ function renderVisualTree() {
     if (!node || !node.parentId) return 0;
     return 1 + getLevel(node.parentId, visited);
   }
+
   nodes.forEach(n => {
+    if (n.parentId) {
+      if (!childMap.has(n.parentId)) childMap.set(n.parentId, []);
+      childMap.get(n.parentId).push(n.id);
+    }
     const level = getLevel(n.id);
     if (!levels.has(level)) levels.set(level, []);
     levels.get(level).push(n);
   });
 
-  // 计算位置
-  levels.forEach((levelNodes, level) => {
-    const totalWidth = levelNodes.length * (nodeW + gapX) - gapX;
-    const startX = (width - totalWidth) / 2;
-    levelNodes.forEach((node, i) => {
-      positions.set(node.id, { x: startX + i * (nodeW + gapX), y: 40 + level * (nodeH + gapY) });
-    });
-  });
-
-  // 生成 SVG
-  let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`;
-  svg += `<rect width="${width}" height="${height}" fill="var(--surface)" rx="8"/>`;
-
-  // 绘制连线
-  nodes.forEach(n => {
-    if (n.parentId && positions.has(n.parentId) && positions.has(n.id)) {
-      const from = positions.get(n.parentId);
-      const to = positions.get(n.id);
-      svg += `<line x1="${from.x + nodeW/2}" y1="${from.y + nodeH}" x2="${to.x + nodeW/2}" y2="${to.y}" stroke="var(--border-strong)" stroke-width="2" stroke-dasharray="4"/>`;
+  // Reingold-Tilford-style: assign x positions bottom-up
+  let nextX = 0;
+  function assignX(nodeId, visited = new Set()) {
+    if (visited.has(nodeId)) return;
+    visited.add(nodeId);
+    const children = childMap.get(nodeId) || [];
+    if (children.length === 0) {
+      positions.set(nodeId, { x: nextX, y: 0 });
+      nextX++;
+    } else {
+      children.forEach(c => assignX(c, visited));
+      const childXs = children.map(c => positions.get(c).x);
+      positions.set(nodeId, { x: (Math.min(...childXs) + Math.max(...childXs)) / 2, y: 0 });
     }
+  }
+
+  // Find root nodes
+  const roots = nodes.filter(n => !n.parentId);
+  roots.forEach(r => assignX(r.id));
+
+  // Assign y by level and scale x
+  nodes.forEach(n => {
+    const pos = positions.get(n.id);
+    if (!pos) return;
+    pos.y = getLevel(n.id) * (nodeH + gapY) + 30;
+    pos.x = pos.x * (nodeW + gapX) + 40;
   });
 
-  // 绘制节点
+  const totalW = Math.max(...nodes.map(n => (positions.get(n)?.x || 0) + nodeW)) + 80;
+  const totalH = Math.max(...nodes.map(n => (positions.get(n)?.y || 0) + nodeH)) + 80;
+
+  // Build active branch set for highlighting
+  const activeBranch = new Set(convTree.activeBranch().map(n => n.id));
+
+  let svg = `<svg width="${Math.max(totalW, container.clientWidth || 800)}" height="${Math.max(totalH, container.clientHeight || 500)}" xmlns="http://www.w3.org/2000/svg" style="display:block">`;
+  svg += `<defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.1"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="var(--border-strong)"/></marker>
+  </defs>`;
+
+  // Draw connections with bezier curves
+  nodes.forEach(n => {
+    if (!n.parentId || !positions.has(n.parentId) || !positions.has(n.id)) return;
+    const from = positions.get(n.parentId);
+    const to = positions.get(n.id);
+    const x1 = from.x + nodeW / 2, y1 = from.y + nodeH;
+    const x2 = to.x + nodeW / 2, y2 = to.y;
+    const midY = (y1 + y2) / 2;
+    const isAct = activeBranch.has(n.id);
+    svg += `<path d="M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}" fill="none" stroke="${isAct ? 'var(--primary)' : 'var(--border-strong)'}" stroke-width="${isAct ? 2.5 : 1.5}" ${isAct ? '' : 'stroke-dasharray="6,4"'}/>`;
+  });
+
+  // Draw nodes
   nodes.forEach(n => {
     const pos = positions.get(n.id);
     if (!pos) return;
     const isActive = convTree.activeLeafId === n.id;
-    const color = n.role === 'user' ? 'var(--primary)' : 'var(--accent)';
-    const bg = isActive ? (n.role === 'user' ? 'var(--primary-soft)' : 'var(--accent-soft)') : 'var(--card)';
-    const border = isActive ? color : 'var(--border)';
-    const preview = (n.content || '').slice(0, 40) + (n.content && n.content.length > 40 ? '...' : '');
-    svg += `<g style="cursor:pointer" onclick="switchBranch && switchBranch('${n.id}')">`;
-    svg += `<rect x="${pos.x}" y="${pos.y}" width="${nodeW}" height="${nodeH}" rx="10" fill="${bg}" stroke="${border}" stroke-width="${isActive ? 2 : 1}"/>`;
-    svg += `<text x="${pos.x + 12}" y="${pos.y + 20}" font-size="12" font-weight="600" fill="${color}">${n.role === 'user' ? '用户' : 'AI'}</text>`;
-    svg += `<text x="${pos.x + 12}" y="${pos.y + 40}" font-size="11" fill="var(--ink-3)" clip-path="inset(0 0 0 0)">${preview.replace(/</g, '&lt;')}</text>`;
+    const isInBranch = activeBranch.has(n.id);
+    const isUser = n.role === 'user';
+    const color = isUser ? 'var(--primary)' : 'var(--accent)';
+    const bg = isActive ? (isUser ? 'var(--primary-soft)' : 'var(--accent-soft)') : 'var(--card-solid)';
+    const borderC = isActive ? color : (isInBranch ? 'var(--primary-glow)' : 'var(--border)');
+    const preview = (n.content || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 35);
+    const icon = isUser ? '\u{1F464}' : '\u{1F916}';
+    const label = isUser ? '用户' : 'AI';
+    svg += `<g style="cursor:pointer" onclick="switchBranch && switchBranch('${n.id}')" class="vis-node">`;
+    svg += `<rect x="${pos.x}" y="${pos.y}" width="${nodeW}" height="${nodeH}" rx="12" fill="${bg}" stroke="${borderC}" stroke-width="${isActive ? 2.5 : 1.5}" filter="url(#shadow)"/>`;
+    svg += `<circle cx="${pos.x + 20}" cy="${pos.y + 22}" r="10" fill="${isUser ? 'var(--primary-soft)' : 'var(--accent-soft)'}"/>`;
+    svg += `<text x="${pos.x + 20}" y="${pos.y + 26}" font-size="11" text-anchor="middle" fill="${color}">${label}</text>`;
+    svg += `<text x="${pos.x + 38}" y="${pos.y + 26}" font-size="11" font-weight="600" fill="var(--ink)">${label}</text>`;
+    svg += `<text x="${pos.x + 14}" y="${pos.y + 48}" font-size="10.5" fill="var(--ink-3)">${preview}${n.content && n.content.length > 35 ? '...' : ''}</text>`;
+    if (isActive) svg += `<circle cx="${pos.x + nodeW - 14}" cy="${pos.y + 14}" r="4" fill="var(--success)"/>`;
     svg += `</g>`;
   });
 
   svg += `</svg>`;
   container.innerHTML = svg;
+  container.style.overflow = 'auto';
 }
 
 window.switchBranch = function(nodeId) {
@@ -3247,7 +3290,8 @@ if (drawerBtns) {
 async function syncToCloud() {
   if (!pb || !currentUser || !convTree) return;
   try {
-    const existing = await pb.collection('conversations').getList(1, 1, { filter: `conv_id = "${convTree.convId}"` });
+    const safeConvId = String(convTree.convId).replace(/[^a-zA-Z0-9_-]/g, '');
+    const existing = await pb.collection('conversations').getList(1, 1, { filter: `conv_id = "${safeConvId}"` });
     const data = {
       conv_id: convTree.convId,
       user_id: currentUser.id,
