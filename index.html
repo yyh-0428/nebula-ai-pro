@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css" onerror="_cdnErr()">
 <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js" onerror="_cdnErr()"></script>
 <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.38.2/dist/pocketbase.umd.min.js" onerror="_cdnErr()"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" onerror="_cdnErr()"></script>
 <style>
 :root {
   --bg: #f5f3ef;
@@ -686,6 +687,20 @@ body {
   border: 1px solid var(--border);
   color: var(--ink-3);
 }
+.model-select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.78rem;
+  cursor: pointer;
+  max-width: 120px;
+  flex-shrink: 0;
+  transition: border-color 0.2s;
+}
+.model-select:focus { border-color: var(--primary); outline: none; }
+.model-select option { background: var(--card-solid); color: var(--ink); }
 .search-input-btn:hover { border-color: var(--ink-3); color: var(--ink); }
 .search-input-btn.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
 
@@ -1325,6 +1340,40 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
 .cdn-fallback i { font-size: 2rem; color: var(--error); margin-bottom: 1rem; }
 .cdn-fallback.show { display: flex; }
 
+/* === 新手引导 === */
+.onboarding-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.4s;
+}
+.onboarding-overlay.show { opacity: 1; pointer-events: auto; }
+.onboarding-card {
+  background: var(--card-solid); border-radius: 20px; padding: 2.5rem 2rem;
+  max-width: 420px; width: 90%; text-align: center;
+  box-shadow: var(--shadow-xl); border: 1px solid var(--border);
+  transform: translateY(20px); transition: transform 0.4s;
+}
+.onboarding-overlay.show .onboarding-card { transform: translateY(0); }
+.onboarding-logo { font-size: 3rem; margin-bottom: 1rem; color: var(--primary); }
+.onboarding-card h2 { font-size: 1.5rem; margin-bottom: 0.3rem; color: var(--ink); }
+.onboarding-subtitle { color: var(--ink-3); font-size: 0.9rem; margin-bottom: 1.5rem; }
+.onboarding-steps { text-align: left; margin-bottom: 1.5rem; }
+.onboarding-step { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; flex-shrink: 0;
+}
+.step-content h4 { font-size: 0.95rem; margin-bottom: 0.15rem; color: var(--ink); }
+.step-content p { font-size: 0.82rem; color: var(--ink-3); margin: 0; }
+.onboarding-btn {
+  width: 100%; padding: 0.75rem; border: none; border-radius: 12px;
+  background: var(--primary); color: #fff; font-size: 1rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.onboarding-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.onboarding-hint { font-size: 0.75rem; color: var(--ink-muted); margin-top: 0.75rem; }
+
 /* === Responsive: Tablet (<=768px) === */
 @media(max-width: 768px) {
   .sidebar { width: 240px; padding: 0.75rem 0.5rem; }
@@ -1437,6 +1486,41 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
 <body>
 <div class="cdn-fallback" id="cdnFallback"><i class="fa fa-exclamation-circle"></i><p>资源加载失败，请检查网络连接后刷新页面。</p><button onclick="location.reload()" style="margin-top:1rem;padding:0.5rem 1.5rem;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;">刷新页面</button></div>
 <div class="toast-container" id="toastContainer"></div>
+
+<!-- 新手引导 -->
+<div class="onboarding-overlay" id="onboardingOverlay">
+  <div class="onboarding-card">
+    <div class="onboarding-logo"><i class="fa fa-star-o"></i></div>
+    <h2>欢迎使用 星云AI Ultra</h2>
+    <p class="onboarding-subtitle">开源免费的 AI 聊天工具</p>
+    <div class="onboarding-steps">
+      <div class="onboarding-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>选择模型</h4>
+          <p>在输入栏左侧选择你要使用的 AI 模型</p>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>配置 API Key</h4>
+          <p>点击右上角 ⚙️ 设置，填入你的 API Key</p>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>开始聊天</h4>
+          <p>输入问题，按 Enter 发送，享受 AI 对话</p>
+        </div>
+      </div>
+    </div>
+    <button class="onboarding-btn" id="onboardingStartBtn">开始使用</button>
+    <p class="onboarding-hint">支持 DeepSeek、GPT-4o、Claude 等多个模型</p>
+  </div>
+</div>
+
 <div class="app-wrapper">
 <!-- 侧边栏 -->
 <aside class="sidebar" id="sidebar">
@@ -1499,6 +1583,16 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
       <div class="input-wrap">
         <textarea class="input-field" id="messageInput" rows="1" placeholder="输入问题... (Enter 发送, Shift+Enter 换行)"></textarea>
       </div>
+      <select class="model-select" id="modelSelect" title="选择模型">
+        <option value="">选择模型</option>
+        <option value="deepseek|https://api.deepseek.com|deepseek-chat">DeepSeek-V3</option>
+        <option value="deepseek|https://api.deepseek.com|deepseek-reasoner">DeepSeek-R1</option>
+        <option value="openai|https://api.openai.com/v1|gpt-4o">GPT-4o</option>
+        <option value="openai|https://api.openai.com/v1|gpt-4o-mini">GPT-4o Mini</option>
+        <option value="claude|https://api.anthropic.com/v1|claude-sonnet-4-20250514">Claude Sonnet</option>
+        <option value="qwen|https://dashscope.aliyuncs.com/compatible-mode/v1|qwen-plus">通义千问</option>
+        <option value="ollama|http://localhost:11434/v1|llama3.1">Ollama 本地</option>
+      </select>
       <button type="button" class="search-input-btn" id="searchBtn" title="联网搜索"><i class="fa fa-globe"></i></button>
       <button type="submit" class="send-btn" id="sendBtn"><i class="fa fa-paper-plane"></i></button>
       <button type="button" class="stop-btn" id="stopBtn"><i class="fa fa-stop"></i></button>
@@ -1714,15 +1808,31 @@ function showToast(msg, type = 'info', duration = 2500) {
   setTimeout(() => { toast.classList.add('out'); setTimeout(() => toast.remove(), 300); }, duration);
 }
 
+// 安全的 Markdown 渲染（XSS 防护）
+function safeRender(content) {
+  if (!content) return '';
+  const html = marked.parse(content);
+  return (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(html) : html;
+}
+
 (() => {
   const forceClickable = (el) => {
     if (el.nodeType === Node.ELEMENT_NODE) {
       if (el.matches?.('button, input, textarea, a, [onclick]')) { el.style.pointerEvents = 'auto'; el.style.cursor = 'pointer'; }
-      if (el.children) Array.from(el.children).forEach(forceClickable);
     }
   };
   document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('button, input, textarea, a').forEach(forceClickable));
-  new MutationObserver(mutations => mutations.forEach(m => m.addedNodes.forEach(node => forceClickable(node)))).observe(document.body, { childList: true, subtree: true });
+  // 只监听聊天容器的变化，而非整个 body
+  const chatContainer = document.getElementById('chatContainer');
+  if (chatContainer) {
+    new MutationObserver(mutations => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.nodeType === 1) forceClickable(node);
+        }
+      }
+    }).observe(chatContainer, { childList: true });
+  }
 })();
 
 // ========== 对话树数据结构 ==========
@@ -1936,6 +2046,30 @@ document.addEventListener('DOMContentLoaded', () => {
   isSearchMode = settings.searchEnabled || false;
   updateSearchUI();
 
+  // 模型快速选择器
+  const modelSelect = document.getElementById('modelSelect');
+  if (modelSelect) {
+    modelSelect.addEventListener('change', () => {
+      const val = modelSelect.value;
+      if (!val) return;
+      const [provider, baseUrl, model] = val.split('|');
+      // 检查是否已配置该 provider 的 API Key
+      const keyMap = { deepseek: 'sk-', openai: 'sk-', claude: 'sk-ant-', qwen: 'sk-', ollama: '' };
+      const keyPrefix = keyMap[provider] || '';
+      if (provider !== 'ollama' && (!settings.apiKey || !settings.apiKey.startsWith(keyPrefix))) {
+        showToast(`请先在设置中配置 ${provider} 的 API Key`, 'warning');
+        settingsModal?.classList.add('show');
+        return;
+      }
+      settings.apiBaseUrl = baseUrl;
+      settings.modelName = model;
+      localStorage.setItem('xingyun_settings', JSON.stringify(settings));
+      if ($('apiBaseUrl')) $('apiBaseUrl').value = baseUrl;
+      if ($('modelName')) $('modelName').value = model;
+      showToast(`已切换到 ${modelSelect.options[modelSelect.selectedIndex].text}`, 'success');
+    });
+  }
+
   if ($('thinkingEnabled')) $('thinkingEnabled').checked = settings.thinkingEnabled || false;
   if ($('thinkingPrompt')) $('thinkingPrompt').value = settings.thinkingPrompt || '';
   isThinkingMode = settings.thinkingEnabled || false;
@@ -2032,13 +2166,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hasBranches) div.classList.add('has-branches');
     const escaped = node.content.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const isUser = node.role === 'user';
-    const thinkingHtml = (!isUser && node.thinking) ? `<details class="thinking-block"><summary><i class="fa fa-lightbulb-o"></i> 深度思考<span class="thinking-status">思考完成</span></summary><div class="thinking-content">${marked.parse(node.thinking)}</div></details>` : '';
+    const thinkingHtml = (!isUser && node.thinking) ? `<details class="thinking-block"><summary><i class="fa fa-lightbulb-o"></i> 深度思考<span class="thinking-status">思考完成</span></summary><div class="thinking-content">${safeRender(node.thinking)}</div></details>` : '';
     div.innerHTML = `
       <div class="avatar ${isUser ? 'user-avatar' : 'ai-avatar'}">${isUser ? '我' : 'AI'}</div>
       <div class="msg-body">
         <div class="msg-bubble ${isUser ? 'user-bubble' : 'ai-bubble'}">
           ${thinkingHtml}
-          ${!isUser ? `<div class="markdown-content" data-content="${escaped}">${marked.parse(node.content)}</div>` : `<p style="font-size:0.92rem;line-height:1.6">${escapeHtml(node.content)}</p>`}
+          ${!isUser ? `<div class="markdown-content" data-content="${escaped}">${safeRender(node.content)}</div>` : `<p style="font-size:0.92rem;line-height:1.6">${escapeHtml(node.content)}</p>`}
           <div class="edit-area">
             <textarea class="edit-textarea" rows="3">${escapeHtml(node.content)}</textarea>
             <div class="edit-btns"><button class="edit-confirm">确认</button><button class="edit-cancel">取消</button></div>
@@ -2213,7 +2347,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const thinkDiv = aiEl.querySelector('.thinking-content');
               const thinkBlock = aiEl.querySelector('.thinking-block');
               const thinkStatus = aiEl.querySelector('.thinking-status');
-              if (thinkDiv) thinkDiv.innerHTML = marked.parse(fullThinking);
+              if (thinkDiv) thinkDiv.innerHTML = safeRender(fullThinking);
               if (thinkBlock) thinkBlock.classList.add('streaming');
               if (thinkStatus) thinkStatus.textContent = '思考中...';
               if (settings.autoScroll && chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -2229,7 +2363,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
               full += content;
               const div = aiEl.querySelector('.markdown-content');
-              if (div) { div.innerHTML = marked.parse(full); div.setAttribute('data-content', full); }
+              if (div) { div.innerHTML = safeRender(full); div.setAttribute('data-content', full); }
               highlightAndCopy(aiEl);
               if (settings.autoScroll && chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
             }
@@ -2558,6 +2692,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sidebarExportBtn) sidebarExportBtn.onclick = () => exportBtn?.click();
   if (sidebarShortcutBtn) sidebarShortcutBtn.onclick = () => shortcutModal?.classList.add('show');
 
+  // 新手引导
+  const onboardingOverlay = document.getElementById('onboardingOverlay');
+  const onboardingStartBtn = document.getElementById('onboardingStartBtn');
+  if (onboardingOverlay && !localStorage.getItem('xingyun_onboarded')) {
+    setTimeout(() => onboardingOverlay.classList.add('show'), 500);
+  }
+  if (onboardingStartBtn) {
+    onboardingStartBtn.onclick = () => {
+      onboardingOverlay?.classList.remove('show');
+      localStorage.setItem('xingyun_onboarded', '1');
+      settingsModal?.classList.add('show');
+    };
+  }
+
 });
 
 // ========== PocketBase 云端同步 ==========
@@ -2796,8 +2944,8 @@ if (convSearchInput) {
 
 // ========== 快捷键扩展 ==========
 document.addEventListener('keydown', (e) => {
-  // Ctrl+V 可视化模式
-  if (e.ctrlKey && e.key === 'v' && !e.shiftKey && document.activeElement === document.body) {
+  // Ctrl+Shift+V 可视化模式（不与粘贴冲突）
+  if (e.ctrlKey && e.shiftKey && e.key === 'V') {
     e.preventDefault();
     visualBtn?.click();
   }
