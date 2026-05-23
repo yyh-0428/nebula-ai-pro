@@ -2087,7 +2087,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let md = `# 星云AI 对话记录\n\n**导出时间**：${new Date().toLocaleString()}\n**模型**：${settings.modelName}\n\n---\n\n`;
     msgs.forEach(m => { md += `**${m.role === 'user' ? '用户' : 'AI'}**：\n\n${m.content}\n\n---\n\n`; });
     const blob = new Blob([md], { type: 'text/markdown' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `星云AI_${new Date().toISOString().slice(0,10)}.md`; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `星云AI_${new Date().toISOString().slice(0,10)}.md`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   // 聊天提交
@@ -2281,7 +2283,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function stopGenerating() { isGenerating = false; abortController = null; if (sendBtn) sendBtn.disabled = false; if (stopBtn) stopBtn.classList.remove('show'); if (messageInput) messageInput.disabled = false; }
 
   if (stopBtn) stopBtn.onclick = () => abortController?.abort();
-  if (clearBtn) clearBtn.onclick = () => { if (confirm('确定清空所有对话？')) { recordCurrentConv(); convTree.nodes.clear(); convTree.activeLeafId = null; saveTree(); addWelcomeMessage(); } };
+  if (clearBtn) clearBtn.onclick = () => { if (confirm('确定清空所有对话？')) { if (isGenerating) abortController?.abort(); recordCurrentConv(); convTree.nodes.clear(); convTree.activeLeafId = null; saveTree(); addWelcomeMessage(); } };
   if (themeBtn) themeBtn.onclick = () => { currentTheme = (currentTheme + 1) % 3; applyTheme(currentTheme); settings.theme = currentTheme; localStorage.setItem('aiSettings', JSON.stringify(settings)); };
   if (settingsBtn) settingsBtn.onclick = () => settingsModal?.classList.add('show');
   if (closeSettingsBtn) closeSettingsBtn.onclick = () => settingsModal?.classList.remove('show');
@@ -2514,6 +2516,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 新建对话
   if (newChatBtn) newChatBtn.onclick = () => {
+    if (isGenerating) abortController?.abort();
     recordCurrentConv();
     convTree.nodes.clear(); convTree.activeLeafId = null;
     convTree.convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
