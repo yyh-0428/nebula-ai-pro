@@ -699,62 +699,113 @@ body {
 .model-indicator i { font-size: 0.85rem; }
 .model-indicator.unconfigured { background: var(--warning-bg); border-color: var(--warning-text); color: var(--warning-text); }
 
-/* 设置标签页 */
-.settings-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
-.settings-tab {
-  flex: 1; padding: 0.6rem; border: none; background: none;
-  color: var(--ink-3); font-size: 0.9rem; font-weight: 500;
-  cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;
+/* 设置模态框（模仿截图风格） */
+.settings-modal {
+  max-width: 460px; width: 92%; border-radius: 16px; overflow: hidden;
 }
-.settings-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.settings-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 1.5rem 0.8rem;
+}
+.settings-modal-header h2 { font-size: 1.15rem; font-weight: 600; color: var(--ink); margin: 0; }
+.settings-modal-header .icon-btn { width: 32px; height: 32px; font-size: 1rem; }
+.settings-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 1.5rem; margin-bottom: 0;
+}
+.settings-tab {
+  flex: 1; padding: 0.65rem 0; border: none; background: none;
+  color: var(--ink-3); font-size: 0.88rem; font-weight: 500;
+  cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; margin: 0;
+}
+.settings-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
 .settings-tab:hover:not(.active) { color: var(--ink-2); }
-.settings-panel { display: none; max-height: 60vh; overflow-y: auto; }
+.settings-modal-body { padding: 1rem 1.5rem 0.5rem; }
+.settings-panel { display: none; }
 .settings-panel.active { display: block; }
 
-/* 厂商选择卡片 */
-.provider-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-.provider-card {
-  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
-  padding: 0.75rem 0.5rem; border-radius: 10px;
-  background: var(--surface); border: 2px solid var(--border);
-  cursor: pointer; transition: all 0.2s;
+/* 表单字段 */
+.settings-field { margin-bottom: 1rem; }
+.settings-label { display: block; font-size: 0.88rem; font-weight: 600; color: var(--ink); margin-bottom: 0.4rem; }
+.settings-input {
+  width: 100%; padding: 0.6rem 0.75rem; border-radius: 10px;
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--ink); font-size: 0.88rem; transition: border-color 0.2s;
+  box-sizing: border-box;
 }
-.provider-card:hover { border-color: var(--primary); }
-.provider-card.active { border-color: var(--primary); background: var(--primary-soft); }
-.provider-icon {
-  width: 36px; height: 36px; border-radius: 8px;
-  background: var(--primary); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.85rem; font-weight: 700;
+.settings-input:focus { border-color: var(--primary); outline: none; }
+.settings-input::placeholder { color: var(--ink-muted); }
+.settings-textarea {
+  width: 100%; padding: 0.6rem 0.75rem; border-radius: 10px;
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--ink); font-size: 0.85rem; resize: vertical; font-family: inherit;
+  box-sizing: border-box;
 }
-.provider-card.active .provider-icon { background: var(--primary); }
-.provider-name { font-size: 0.78rem; color: var(--ink-2); font-weight: 500; }
+.settings-textarea:focus { border-color: var(--primary); outline: none; }
+.select-wrap { position: relative; }
+.settings-select {
+  width: 100%; padding: 0.6rem 2rem 0.6rem 0.75rem; border-radius: 10px;
+  border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--ink); font-size: 0.88rem; appearance: none; cursor: pointer;
+  box-sizing: border-box;
+}
+.settings-select:focus { border-color: var(--primary); outline: none; }
+.settings-select option { background: var(--card-solid); color: var(--ink); }
+.select-arrow { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--ink-muted); font-size: 0.75rem; pointer-events: none; }
 
-/* API Key 行 */
-.api-key-row { display: flex; gap: 0.5rem; }
-.api-key-row .form-input { flex: 1; }
-.fetch-models-btn {
-  padding: 0 0.8rem; border-radius: 8px; border: 1px solid var(--primary);
-  background: var(--primary); color: #fff; font-size: 0.8rem;
-  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+/* API Key 输入 */
+.api-key-input-wrap { position: relative; }
+.api-key-input-wrap .settings-input { padding-right: 2.5rem; }
+.toggle-password {
+  position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--ink-muted); cursor: pointer;
+  padding: 0.3rem; font-size: 0.85rem;
 }
-.fetch-models-btn:hover { opacity: 0.85; }
-.fetch-models-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.form-hint { font-size: 0.75rem; color: var(--ink-muted); margin-top: 0.3rem; }
+.toggle-password:hover { color: var(--ink-2); }
+
+/* 模型获取行 */
+.model-fetch-row { display: flex; align-items: center; justify-content: space-between; margin-top: 0.3rem; }
+.model-hint { font-size: 0.75rem; color: var(--ink-muted); }
+.settings-link-btn {
+  background: none; border: none; color: var(--primary);
+  font-size: 0.8rem; cursor: pointer; padding: 0;
+}
+.settings-link-btn:hover { text-decoration: underline; }
 
 /* 模型列表 */
-.model-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 200px; overflow-y: auto; }
-.model-item {
-  display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 0.75rem; border-radius: 8px;
-  background: var(--surface); border: 1px solid var(--border);
+.model-list { display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 150px; overflow-y: auto; margin-top: 0.4rem; }
+.model-chip {
+  padding: 0.35rem 0.7rem; border-radius: 16px;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--ink-2); font-size: 0.78rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.model-chip:hover { border-color: var(--primary); color: var(--primary); }
+.model-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* 提示和按钮 */
+.settings-notice { font-size: 0.75rem; color: var(--ink-muted); margin: 0.5rem 0 0; display: flex; align-items: center; gap: 0.3rem; }
+.settings-notice::before { content: 'i'; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--ink-muted); font-size: 0.65rem; font-style: italic; flex-shrink: 0; }
+.settings-modal-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 1.2rem; padding-top: 0.8rem; border-top: 1px solid var(--border);
+}
+.settings-actions { display: flex; gap: 0.5rem; }
+.settings-btn-cancel {
+  padding: 0.5rem 1.2rem; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--ink-2); font-size: 0.88rem;
   cursor: pointer; transition: all 0.2s;
 }
-.model-item:hover { border-color: var(--primary); }
-.model-item.selected { border-color: var(--primary); background: var(--primary-soft); }
-.model-item input[type="radio"] { accent-color: var(--primary); }
-.model-item-name { font-size: 0.85rem; color: var(--ink); flex: 1; }
-.model-item-id { font-size: 0.72rem; color: var(--ink-muted); font-family: monospace; }
+.settings-btn-cancel:hover { background: var(--bg); }
+.settings-btn-confirm {
+  padding: 0.5rem 1.2rem; border-radius: 8px; border: none;
+  background: var(--ink); color: #fff; font-size: 0.88rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+}
+.settings-btn-confirm:hover { opacity: 0.9; }
+
+/* 开关行 */
+.settings-switch-row { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0; }
+.settings-switch-row span { font-size: 0.85rem; color: var(--ink-2); }
 .search-input-btn:hover { border-color: var(--ink-3); color: var(--ink); }
 .search-input-btn.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
 
@@ -1648,118 +1699,105 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
   </div>
 </div>
 
-<!-- 设置模态框（标签页式） -->
+<!-- 设置模态框 -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal-content glass" id="settingsModalContent" style="max-width:520px">
-    <div class="modal-header">
-      <h2 class="modal-title">设置</h2>
+  <div class="modal-content glass settings-modal" id="settingsModalContent">
+    <div class="settings-modal-header">
+      <h2>自定义大模型</h2>
       <button class="icon-btn" id="closeSettingsBtn"><i class="fa fa-times"></i></button>
     </div>
+
     <div class="settings-tabs">
-      <button class="settings-tab active" data-tab="model">模型</button>
-      <button class="settings-tab" data-tab="chat">对话</button>
-      <button class="settings-tab" data-tab="advanced">高级</button>
+      <button class="settings-tab active" data-tab="model">模型 API</button>
+      <button class="settings-tab" data-tab="chat">对话设置</button>
     </div>
 
-    <!-- 模型配置 -->
-    <div class="settings-panel active" id="panel-model">
-      <div class="provider-grid" id="providerGrid">
-        <button class="provider-card active" data-provider="deepseek">
-          <span class="provider-icon">DS</span>
-          <span class="provider-name">DeepSeek</span>
-        </button>
-        <button class="provider-card" data-provider="openai">
-          <span class="provider-icon">AI</span>
-          <span class="provider-name">OpenAI</span>
-        </button>
-        <button class="provider-card" data-provider="claude">
-          <span class="provider-icon">Cl</span>
-          <span class="provider-name">Claude</span>
-        </button>
-        <button class="provider-card" data-provider="qwen">
-          <span class="provider-icon">Qw</span>
-          <span class="provider-name">通义千问</span>
-        </button>
-        <button class="provider-card" data-provider="doubao">
-          <span class="provider-icon">豆</span>
-          <span class="provider-name">豆包</span>
-        </button>
-        <button class="provider-card" data-provider="ollama">
-          <span class="provider-icon">Ol</span>
-          <span class="provider-name">Ollama</span>
-        </button>
-      </div>
-      <div class="form-group" style="margin-top:1rem">
-        <label class="form-label">API Key</label>
-        <div class="api-key-row">
-          <input type="password" class="form-input" id="apiKey" placeholder="粘贴你的 API Key..." autocomplete="off">
-          <button type="button" class="fetch-models-btn" id="fetchModelsBtn"><i class="fa fa-refresh"></i> 获取模型</button>
+    <div class="settings-modal-body">
+      <!-- 模型配置 -->
+      <div class="settings-panel active" id="panel-model">
+        <div class="settings-field">
+          <label class="settings-label">模型厂商：</label>
+          <div class="select-wrap">
+            <select class="settings-select" id="providerSelect">
+              <option value="">请选择模型厂商</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="openai">OpenAI</option>
+              <option value="claude">Claude (Anthropic)</option>
+              <option value="qwen">通义千问 (阿里)</option>
+              <option value="doubao">豆包 (字节)</option>
+              <option value="ollama">Ollama (本地)</option>
+            </select>
+            <i class="fa fa-chevron-down select-arrow"></i>
+          </div>
         </div>
-        <p class="form-hint" id="apiKeyHint">DeepSeek 免费注册即送 500 万 Token</p>
-      </div>
-      <div class="form-group" id="modelListGroup" style="display:none">
-        <label class="form-label">选择模型</label>
-        <div class="model-list" id="modelList"></div>
-      </div>
-      <div class="form-group" id="manualModelGroup">
-        <label class="form-label">或手动输入模型名称</label>
-        <input type="text" class="form-input" id="modelName" placeholder="deepseek-chat">
-      </div>
-      <button type="button" class="save-btn" id="saveSettingsBtn">保存</button>
-    </div>
 
-    <!-- 对话设置 -->
-    <div class="settings-panel" id="panel-chat">
-      <div class="form-group">
-        <label class="form-label">系统提示词</label>
-        <textarea class="form-textarea" id="systemPrompt" rows="3" placeholder="你是一个乐于助人的AI助手..."></textarea>
-        <div class="preset-grid" style="margin-top:0.5rem">
-          <button type="button" class="preset-btn prompt-preset" data-prompt="你是专业编程助手，给出可运行代码+详细解释。">编程助手</button>
-          <button type="button" class="preset-btn prompt-preset" data-prompt="你是数学专家，使用LaTeX公式严谨解题。">数学解题</button>
-          <button type="button" class="preset-btn prompt-preset" data-prompt="你是专业翻译，精准直译+意译。">翻译专家</button>
-          <button type="button" class="preset-btn prompt-preset" data-prompt="你是幽默聊天助手，轻松接地气。">幽默朋友</button>
-          <button type="button" class="preset-btn prompt-preset" data-prompt="你是学术顾问，回答严谨带参考。">学术助手</button>
-          <button type="button" class="preset-btn prompt-preset" data-prompt="你是职场顾问，给出实用建议。">职场顾问</button>
+        <div class="settings-field">
+          <label class="settings-label">模型名称：</label>
+          <input type="text" class="settings-input" id="modelName" placeholder="请输入模型名称">
+          <div class="model-fetch-row">
+            <span class="model-hint" id="modelHint">选择厂商后可自动获取模型列表</span>
+            <button type="button" class="settings-link-btn" id="fetchModelsBtn"><i class="fa fa-refresh"></i> 获取模型</button>
+          </div>
+        </div>
+
+        <div class="settings-field">
+          <label class="settings-label">API Key：</label>
+          <div class="api-key-input-wrap">
+            <input type="password" class="settings-input" id="apiKey" placeholder="请输入" autocomplete="off">
+            <button type="button" class="toggle-password" id="togglePassword"><i class="fa fa-eye"></i></button>
+          </div>
+        </div>
+
+        <div class="settings-field" id="modelListGroup" style="display:none">
+          <label class="settings-label">可用模型：</label>
+          <div class="model-list" id="modelList"></div>
+        </div>
+
+        <p class="settings-notice">可选用自定义大模型配置，使用时请遵循相关法律法规</p>
+
+        <div class="settings-modal-footer">
+          <button type="button" class="settings-link-btn" id="showChatSettings">+ 对话设置</button>
+          <div class="settings-actions">
+            <button type="button" class="settings-btn-cancel" id="cancelSettingsBtn">取消</button>
+            <button type="button" class="settings-btn-confirm" id="saveSettingsBtn">确定</button>
+          </div>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">消息增强</label>
-        <div class="form-group" style="margin-bottom:0.5rem"><label class="form-label" style="font-weight:400;font-size:0.75rem">前置词</label><textarea class="form-textarea" id="prefixPrompt" rows="2" style="font-size:0.82rem"></textarea></div>
-        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="font-weight:400;font-size:0.75rem">后置词</label><textarea class="form-textarea" id="suffixPrompt" rows="2" style="font-size:0.82rem"></textarea></div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">参数</label>
-        <div class="form-section">
+
+      <!-- 对话设置（默认隐藏） -->
+      <div class="settings-panel" id="panel-chat">
+        <div class="settings-field">
+          <label class="settings-label">系统提示词</label>
+          <textarea class="settings-textarea" id="systemPrompt" rows="3" placeholder="你是一个乐于助人的AI助手..."></textarea>
+          <div class="preset-grid" style="margin-top:0.5rem">
+            <button type="button" class="preset-btn prompt-preset" data-prompt="你是专业编程助手，给出可运行代码+详细解释。">编程助手</button>
+            <button type="button" class="preset-btn prompt-preset" data-prompt="你是数学专家，使用LaTeX公式严谨解题。">数学解题</button>
+            <button type="button" class="preset-btn prompt-preset" data-prompt="你是专业翻译，精准直译+意译。">翻译专家</button>
+            <button type="button" class="preset-btn prompt-preset" data-prompt="你是幽默聊天助手，轻松接地气。">幽默朋友</button>
+          </div>
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">参数</label>
           <div class="range-wrap">
             <div class="range-header"><span class="range-label">温度</span><span class="range-value" id="temperatureValue">0.7</span></div>
             <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7">
           </div>
-          <div class="form-row"><span class="form-row-label">最大上下文轮数</span><input type="number" id="maxContextRounds" min="1" max="50" value="20"></div>
-          <div class="form-row"><span class="form-row-label">自动滚动到底部</span><input type="checkbox" id="autoScroll" checked></div>
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">联网搜索</label>
+          <div class="settings-switch-row"><span>默认启用搜索</span><input type="checkbox" id="searchEnabled"></div>
+        </div>
+        <div class="settings-modal-footer">
+          <button type="button" class="settings-link-btn" id="showModelSettings">+ 模型 API</button>
+          <div class="settings-actions">
+            <button type="button" class="settings-btn-cancel" id="cancelChatSettingsBtn">取消</button>
+            <button type="button" class="settings-btn-confirm" id="saveChatSettingsBtn">确定</button>
+          </div>
         </div>
       </div>
-      <button type="button" class="save-btn" id="saveChatSettingsBtn">保存</button>
-    </div>
-
-    <!-- 高级功能 -->
-    <div class="settings-panel" id="panel-advanced">
-      <div class="form-group">
-        <label class="form-label">联网搜索</label>
-        <div class="form-section">
-          <div class="form-group" style="margin-bottom:0.5rem"><label class="form-label" style="font-weight:400;font-size:0.75rem">搜索 API 地址（留空则禁用）</label><input type="text" class="form-input" id="searchApiUrl" placeholder="https://api.example.com/search?q=" style="font-size:0.82rem"></div>
-          <div class="form-row"><span class="form-row-label">默认启用搜索</span><input type="checkbox" id="searchEnabled"></div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">深度思考</label>
-        <div class="form-section">
-          <div class="form-row"><span class="form-row-label">启用深度思考模式</span><input type="checkbox" id="thinkingEnabled"></div>
-          <div class="form-group" style="margin-top:0.5rem;margin-bottom:0"><label class="form-label" style="font-weight:400;font-size:0.75rem">思考提示词（留空使用默认）</label><textarea class="form-textarea" id="thinkingPrompt" rows="2" style="font-size:0.82rem" placeholder="请先进行深入的思考和推理..."></textarea></div>
-        </div>
-      </div>
-      <button type="button" class="save-btn" id="saveAdvancedSettingsBtn">保存</button>
-    </div>
-  </div>
+    </div><!-- /settings-panel -->
+    </div><!-- /settings-modal-body -->
+  </div><!-- /settings-modal-content -->
 </div>
 
 <!-- 分支视图模态框 -->
@@ -1844,8 +1882,6 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
     </div>
   </div>
 </div>
-
-</div><!-- /app-wrapper -->
 
 <script>
 // CDN 加载检测 — 只在真正失败时显示
@@ -2491,60 +2527,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ========== 厂商配置 ==========
   const PROVIDERS = {
-    deepseek: { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', modelsUrl: '/models', hint: '免费注册即送 500 万 Token', icon: 'DS' },
-    openai:   { name: 'OpenAI',   baseUrl: 'https://api.openai.com/v1', modelsUrl: '/models', hint: '需要绑卡付费', icon: 'AI' },
-    claude:   { name: 'Claude',    baseUrl: 'https://api.anthropic.com/v1', modelsUrl: null, hint: '最新 Claude Sonnet 4 / Opus 4', icon: 'Cl', models: ['claude-sonnet-4-20250514', 'claude-opus-4-20250918', 'claude-haiku-4-20250414'] },
-    qwen:     { name: '通义千问',  baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', modelsUrl: '/models', hint: '阿里云大模型，兼容 OpenAI 格式', icon: 'Qw' },
-    doubao:   { name: '豆包',      baseUrl: 'https://api.doubao.com/v1', modelsUrl: '/models', hint: '字节跳动大模型', icon: '豆' },
-    ollama:   { name: 'Ollama',    baseUrl: 'http://localhost:11434/v1', modelsUrl: '/models', hint: '本地部署，无需 API Key', icon: 'Ol' },
+    deepseek: { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', modelsUrl: '/models', hint: '免费注册即送 500 万 Token', models: ['deepseek-chat', 'deepseek-reasoner'] },
+    openai:   { name: 'OpenAI',   baseUrl: 'https://api.openai.com/v1', modelsUrl: '/models', hint: '需要绑卡付费', models: ['gpt-4o', 'gpt-4o-mini', 'o1', 'o1-mini'] },
+    claude:   { name: 'Claude',    baseUrl: 'https://api.anthropic.com/v1', modelsUrl: null, hint: '最新 Claude Sonnet 4 / Opus 4', models: ['claude-sonnet-4-20250514', 'claude-opus-4-20250918', 'claude-haiku-4-20250414'] },
+    qwen:     { name: '通义千问',  baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', modelsUrl: '/models', hint: '阿里云大模型，兼容 OpenAI 格式', models: ['qwen-max', 'qwen-plus', 'qwen-turbo-latest'] },
+    doubao:   { name: '豆包',      baseUrl: 'https://api.doubao.com/v1', modelsUrl: '/models', hint: '字节跳动大模型', models: ['doubao-pro-256k', 'doubao-pro-128k', 'doubao-lite-128k'] },
+    ollama:   { name: 'Ollama',    baseUrl: 'http://localhost:11434/v1', modelsUrl: '/models', hint: '本地部署，无需 API Key', models: ['llama3.1', 'qwen2.5', 'deepseek-r1'] },
   };
   let currentProvider = settings.provider || 'deepseek';
 
-  // 初始化厂商选择
-  document.querySelectorAll('.provider-card').forEach(card => {
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.provider-card').forEach(c => c.classList.remove('active'));
-      card.classList.add('active');
-      currentProvider = card.dataset.provider;
+  // 初始化厂商下拉选择
+  const providerSelect = document.getElementById('providerSelect');
+  if (providerSelect) {
+    providerSelect.value = currentProvider;
+    providerSelect.addEventListener('change', () => {
+      currentProvider = providerSelect.value;
       const p = PROVIDERS[currentProvider];
-      if ($('apiKeyHint')) $('apiKeyHint').textContent = p.hint;
-      if ($('apiKey')) $('apiKey').placeholder = currentProvider === 'ollama' ? '无需 API Key' : '粘贴你的 API Key...';
-      // 清空模型列表
+      if ($('modelHint')) $('modelHint').textContent = p ? p.hint : '选择厂商后可自动获取模型列表';
+      if ($('apiKey')) $('apiKey').placeholder = currentProvider === 'ollama' ? '无需 API Key' : '请输入';
       if ($('modelListGroup')) $('modelListGroup').style.display = 'none';
       if ($('modelList')) $('modelList').innerHTML = '';
     });
-  });
+  }
+
+  // 密码显示/切换
+  const togglePassword = document.getElementById('togglePassword');
+  if (togglePassword) {
+    togglePassword.addEventListener('click', () => {
+      const input = $('apiKey');
+      if (!input) return;
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      togglePassword.innerHTML = isPassword ? '<i class="fa fa-eye-slash"></i>' : '<i class="fa fa-eye"></i>';
+    });
+  }
 
   // 获取模型列表
   const fetchModelsBtn = document.getElementById('fetchModelsBtn');
   if (fetchModelsBtn) {
     fetchModelsBtn.addEventListener('click', async () => {
       const p = PROVIDERS[currentProvider];
+      if (!p) { showToast('请先选择模型厂商', 'warning'); return; }
       const apiKey = $('apiKey')?.value?.trim();
-      if (!p.modelsUrl) {
-        // 没有 models 接口，使用预设列表
-        renderModelList(p.models || []);
-        return;
-      }
-      if (currentProvider !== 'ollama' && !apiKey) {
+      if (p.modelsUrl && currentProvider !== 'ollama' && !apiKey) {
         showToast('请先填写 API Key', 'warning');
         return;
       }
       fetchModelsBtn.disabled = true;
-      fetchModelsBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 获取中...';
+      fetchModelsBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 获取中';
       try {
-        const headers = { 'Content-Type': 'application/json' };
-        if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-        const resp = await fetch(p.baseUrl + p.modelsUrl, { headers });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        const models = (data.data || data.models || []).map(m => m.id || m.name).filter(Boolean).sort();
+        let models = [];
+        if (p.modelsUrl) {
+          const headers = {};
+          if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+          const resp = await fetch(p.baseUrl + p.modelsUrl, { headers });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const data = await resp.json();
+          models = (data.data || data.models || []).map(m => m.id || m.name).filter(Boolean).sort();
+        }
+        if (models.length === 0 && p.models) models = p.models;
         if (models.length === 0) throw new Error('未找到可用模型');
         renderModelList(models);
-        showToast(`获取到 ${models.length} 个模型`, 'success');
+        showToast(`已获取 ${models.length} 个模型`, 'success');
       } catch (err) {
         showToast('获取失败: ' + err.message, 'error');
-        // 回退到预设列表
         if (p.models) renderModelList(p.models);
       } finally {
         fetchModelsBtn.disabled = false;
@@ -2560,16 +2606,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (models.length === 0) { group.style.display = 'none'; return; }
     group.style.display = 'block';
     list.innerHTML = models.map(id =>
-      `<label class="model-item${id === settings.modelName ? ' selected' : ''}">
-        <input type="radio" name="modelRadio" value="${id}" ${id === settings.modelName ? 'checked' : ''}>
-        <span class="model-item-name">${id}</span>
-      </label>`
+      `<span class="model-chip${id === settings.modelName ? ' active' : ''}" data-model="${id}">${id}</span>`
     ).join('');
-    list.querySelectorAll('input[type="radio"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        list.querySelectorAll('.model-item').forEach(i => i.classList.remove('selected'));
-        radio.closest('.model-item').classList.add('selected');
-        if ($('modelName')) $('modelName').value = radio.value;
+    list.querySelectorAll('.model-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        list.querySelectorAll('.model-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        if ($('modelName')) $('modelName').value = chip.dataset.model;
       });
     });
   }
@@ -2577,32 +2620,31 @@ document.addEventListener('DOMContentLoaded', () => {
   // 保存设置
   function saveAllSettings() {
     settings.provider = currentProvider;
-    settings.apiBaseUrl = PROVIDERS[currentProvider].baseUrl;
+    settings.apiBaseUrl = PROVIDERS[currentProvider]?.baseUrl || '';
     settings.apiKey = $('apiKey')?.value.trim() || '';
     settings.modelName = $('modelName')?.value.trim() || '';
     settings.systemPrompt = $('systemPrompt')?.value.trim() || '';
-    settings.prefixPrompt = $('prefixPrompt')?.value.trim() || '';
-    settings.suffixPrompt = $('suffixPrompt')?.value.trim() || '';
     settings.temperature = parseFloat(temperatureSlider?.value) || 0.7;
     settings.maxContextRounds = parseInt($('maxContextRounds')?.value) || 20;
     settings.autoScroll = autoScrollCheckbox?.checked ?? true;
-    settings.globalMemory = globalMemoryInput?.value.trim() || '';
-    settings.searchApiUrl = $('searchApiUrl')?.value.trim() || '';
     settings.searchEnabled = $('searchEnabled')?.checked || false;
     isSearchMode = settings.searchEnabled; updateSearchUI();
-    settings.thinkingEnabled = $('thinkingEnabled')?.checked || false;
-    settings.thinkingPrompt = $('thinkingPrompt')?.value.trim() || '';
-    isThinkingMode = settings.thinkingEnabled; updateThinkingUI();
     localStorage.setItem('aiSettings', JSON.stringify(settings));
     updateModelIndicator();
     settingsModal?.classList.remove('show');
     showToast('设置已保存', 'success');
   }
 
-  // 三个保存按钮
-  ['saveSettingsBtn', 'saveChatSettingsBtn', 'saveAdvancedSettingsBtn'].forEach(id => {
+  // 保存按钮
+  ['saveSettingsBtn', 'saveChatSettingsBtn'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); saveAllSettings(); });
+  });
+
+  // 取消按钮
+  ['cancelSettingsBtn', 'cancelChatSettingsBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', () => settingsModal?.classList.remove('show'));
   });
 
   // 标签页切换
@@ -2613,6 +2655,16 @@ document.addEventListener('DOMContentLoaded', () => {
       tab.classList.add('active');
       document.getElementById('panel-' + tab.dataset.tab)?.classList.add('active');
     });
+  });
+
+  // 对话设置链接
+  const showChatSettings = document.getElementById('showChatSettings');
+  const showModelSettings = document.getElementById('showModelSettings');
+  if (showChatSettings) showChatSettings.addEventListener('click', () => {
+    document.querySelector('.settings-tab[data-tab="chat"]')?.click();
+  });
+  if (showModelSettings) showModelSettings.addEventListener('click', () => {
+    document.querySelector('.settings-tab[data-tab="model"]')?.click();
   });
 
   // 模型指示器
@@ -2634,11 +2686,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modelIndicator) {
     modelIndicator.addEventListener('click', () => {
       settingsModal?.classList.add('show');
-      // 激活模型标签页
-      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
-      document.querySelector('.settings-tab[data-tab="model"]')?.classList.add('active');
-      document.getElementById('panel-model')?.classList.add('active');
+      document.querySelector('.settings-tab[data-tab="model"]')?.click();
     });
   }
 
