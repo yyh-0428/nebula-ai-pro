@@ -687,20 +687,74 @@ body {
   border: 1px solid var(--border);
   color: var(--ink-3);
 }
-.model-select {
-  padding: 0.3rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 0.78rem;
-  cursor: pointer;
-  max-width: 120px;
-  flex-shrink: 0;
-  transition: border-color 0.2s;
+/* 模型指示器 */
+.model-indicator {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.35rem 0.7rem; border-radius: 8px;
+  background: var(--primary-soft); border: 1px solid var(--primary);
+  color: var(--primary); font-size: 0.78rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; flex-shrink: 0; white-space: nowrap;
 }
-.model-select:focus { border-color: var(--primary); outline: none; }
-.model-select option { background: var(--card-solid); color: var(--ink); }
+.model-indicator:hover { background: var(--primary-glow); }
+.model-indicator i { font-size: 0.85rem; }
+.model-indicator.unconfigured { background: var(--warning-bg); border-color: var(--warning-text); color: var(--warning-text); }
+
+/* 设置标签页 */
+.settings-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+.settings-tab {
+  flex: 1; padding: 0.6rem; border: none; background: none;
+  color: var(--ink-3); font-size: 0.9rem; font-weight: 500;
+  cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;
+}
+.settings-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.settings-tab:hover:not(.active) { color: var(--ink-2); }
+.settings-panel { display: none; max-height: 60vh; overflow-y: auto; }
+.settings-panel.active { display: block; }
+
+/* 厂商选择卡片 */
+.provider-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.provider-card {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  padding: 0.75rem 0.5rem; border-radius: 10px;
+  background: var(--surface); border: 2px solid var(--border);
+  cursor: pointer; transition: all 0.2s;
+}
+.provider-card:hover { border-color: var(--primary); }
+.provider-card.active { border-color: var(--primary); background: var(--primary-soft); }
+.provider-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 700;
+}
+.provider-card.active .provider-icon { background: var(--primary); }
+.provider-name { font-size: 0.78rem; color: var(--ink-2); font-weight: 500; }
+
+/* API Key 行 */
+.api-key-row { display: flex; gap: 0.5rem; }
+.api-key-row .form-input { flex: 1; }
+.fetch-models-btn {
+  padding: 0 0.8rem; border-radius: 8px; border: 1px solid var(--primary);
+  background: var(--primary); color: #fff; font-size: 0.8rem;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.fetch-models-btn:hover { opacity: 0.85; }
+.fetch-models-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.form-hint { font-size: 0.75rem; color: var(--ink-muted); margin-top: 0.3rem; }
+
+/* 模型列表 */
+.model-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 200px; overflow-y: auto; }
+.model-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.75rem; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.2s;
+}
+.model-item:hover { border-color: var(--primary); }
+.model-item.selected { border-color: var(--primary); background: var(--primary-soft); }
+.model-item input[type="radio"] { accent-color: var(--primary); }
+.model-item-name { font-size: 0.85rem; color: var(--ink); flex: 1; }
+.model-item-id { font-size: 0.72rem; color: var(--ink-muted); font-family: monospace; }
 .search-input-btn:hover { border-color: var(--ink-3); color: var(--ink); }
 .search-input-btn.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
 
@@ -1580,19 +1634,12 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
 
   <div class="input-area glass" id="inputArea">
     <form class="input-form" id="chatForm">
+      <button type="button" class="model-indicator" id="modelIndicator" title="点击切换模型">
+        <i class="fa fa-cube"></i> <span id="modelIndicatorText">未配置模型</span>
+      </button>
       <div class="input-wrap">
         <textarea class="input-field" id="messageInput" rows="1" placeholder="输入问题... (Enter 发送, Shift+Enter 换行)"></textarea>
       </div>
-      <select class="model-select" id="modelSelect" title="选择模型">
-        <option value="">选择模型</option>
-        <option value="deepseek|https://api.deepseek.com|deepseek-chat">DeepSeek-V3</option>
-        <option value="deepseek|https://api.deepseek.com|deepseek-reasoner">DeepSeek-R1</option>
-        <option value="openai|https://api.openai.com/v1|gpt-4o">GPT-4o</option>
-        <option value="openai|https://api.openai.com/v1|gpt-4o-mini">GPT-4o Mini</option>
-        <option value="claude|https://api.anthropic.com/v1|claude-sonnet-4-20250514">Claude Sonnet</option>
-        <option value="qwen|https://dashscope.aliyuncs.com/compatible-mode/v1|qwen-plus">通义千问</option>
-        <option value="ollama|http://localhost:11434/v1|llama3.1">Ollama 本地</option>
-      </select>
       <button type="button" class="search-input-btn" id="searchBtn" title="联网搜索"><i class="fa fa-globe"></i></button>
       <button type="submit" class="send-btn" id="sendBtn"><i class="fa fa-paper-plane"></i></button>
       <button type="button" class="stop-btn" id="stopBtn"><i class="fa fa-stop"></i></button>
@@ -1601,21 +1648,72 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
   </div>
 </div>
 
-<!-- 设置模态框 -->
+<!-- 设置模态框（标签页式） -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal-content glass" id="settingsModalContent">
+  <div class="modal-content glass" id="settingsModalContent" style="max-width:520px">
     <div class="modal-header">
-      <h2 class="modal-title">模型设置</h2>
+      <h2 class="modal-title">设置</h2>
       <button class="icon-btn" id="closeSettingsBtn"><i class="fa fa-times"></i></button>
     </div>
-    <div id="settingsForm">
-      <div class="form-group"><label class="form-label">API 基础地址</label><input type="text" class="form-input" id="apiBaseUrl" placeholder="https://api.doubao.com/v1"></div>
-      <div class="form-group"><label class="form-label">API 密钥</label><input type="password" class="form-input" id="apiKey" placeholder="sk-..." autocomplete="off"></div>
-      <div class="form-group"><label class="form-label">模型名称</label><input type="text" class="form-input" id="modelName" placeholder="gpt-4o"></div>
-      <div class="form-group"><label class="form-label">系统提示词</label><textarea class="form-textarea" id="systemPrompt" rows="3" placeholder="你是一个乐于助人的AI助手..."></textarea></div>
+    <div class="settings-tabs">
+      <button class="settings-tab active" data-tab="model">模型</button>
+      <button class="settings-tab" data-tab="chat">对话</button>
+      <button class="settings-tab" data-tab="advanced">高级</button>
+    </div>
+
+    <!-- 模型配置 -->
+    <div class="settings-panel active" id="panel-model">
+      <div class="provider-grid" id="providerGrid">
+        <button class="provider-card active" data-provider="deepseek">
+          <span class="provider-icon">DS</span>
+          <span class="provider-name">DeepSeek</span>
+        </button>
+        <button class="provider-card" data-provider="openai">
+          <span class="provider-icon">AI</span>
+          <span class="provider-name">OpenAI</span>
+        </button>
+        <button class="provider-card" data-provider="claude">
+          <span class="provider-icon">Cl</span>
+          <span class="provider-name">Claude</span>
+        </button>
+        <button class="provider-card" data-provider="qwen">
+          <span class="provider-icon">Qw</span>
+          <span class="provider-name">通义千问</span>
+        </button>
+        <button class="provider-card" data-provider="doubao">
+          <span class="provider-icon">豆</span>
+          <span class="provider-name">豆包</span>
+        </button>
+        <button class="provider-card" data-provider="ollama">
+          <span class="provider-icon">Ol</span>
+          <span class="provider-name">Ollama</span>
+        </button>
+      </div>
+      <div class="form-group" style="margin-top:1rem">
+        <label class="form-label">API Key</label>
+        <div class="api-key-row">
+          <input type="password" class="form-input" id="apiKey" placeholder="粘贴你的 API Key..." autocomplete="off">
+          <button type="button" class="fetch-models-btn" id="fetchModelsBtn"><i class="fa fa-refresh"></i> 获取模型</button>
+        </div>
+        <p class="form-hint" id="apiKeyHint">DeepSeek 免费注册即送 500 万 Token</p>
+      </div>
+      <div class="form-group" id="modelListGroup" style="display:none">
+        <label class="form-label">选择模型</label>
+        <div class="model-list" id="modelList"></div>
+      </div>
+      <div class="form-group" id="manualModelGroup">
+        <label class="form-label">或手动输入模型名称</label>
+        <input type="text" class="form-input" id="modelName" placeholder="deepseek-chat">
+      </div>
+      <button type="button" class="save-btn" id="saveSettingsBtn">保存</button>
+    </div>
+
+    <!-- 对话设置 -->
+    <div class="settings-panel" id="panel-chat">
       <div class="form-group">
-        <label class="form-label">常用系统提示词</label>
-        <div class="preset-grid">
+        <label class="form-label">系统提示词</label>
+        <textarea class="form-textarea" id="systemPrompt" rows="3" placeholder="你是一个乐于助人的AI助手..."></textarea>
+        <div class="preset-grid" style="margin-top:0.5rem">
           <button type="button" class="preset-btn prompt-preset" data-prompt="你是专业编程助手，给出可运行代码+详细解释。">编程助手</button>
           <button type="button" class="preset-btn prompt-preset" data-prompt="你是数学专家，使用LaTeX公式严谨解题。">数学解题</button>
           <button type="button" class="preset-btn prompt-preset" data-prompt="你是专业翻译，精准直译+意译。">翻译专家</button>
@@ -1626,11 +1724,11 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
       </div>
       <div class="form-group">
         <label class="form-label">消息增强</label>
-        <div class="form-group"><label class="form-label" style="font-weight:400;font-size:0.75rem">前置词</label><textarea class="form-textarea" id="prefixPrompt" rows="2" style="font-size:0.82rem"></textarea></div>
-        <div class="form-group"><label class="form-label" style="font-weight:400;font-size:0.75rem">后置词</label><textarea class="form-textarea" id="suffixPrompt" rows="2" style="font-size:0.82rem"></textarea></div>
+        <div class="form-group" style="margin-bottom:0.5rem"><label class="form-label" style="font-weight:400;font-size:0.75rem">前置词</label><textarea class="form-textarea" id="prefixPrompt" rows="2" style="font-size:0.82rem"></textarea></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label" style="font-weight:400;font-size:0.75rem">后置词</label><textarea class="form-textarea" id="suffixPrompt" rows="2" style="font-size:0.82rem"></textarea></div>
       </div>
       <div class="form-group">
-        <label class="form-label">高级设置</label>
+        <label class="form-label">参数</label>
         <div class="form-section">
           <div class="range-wrap">
             <div class="range-header"><span class="range-label">温度</span><span class="range-value" id="temperatureValue">0.7</span></div>
@@ -1640,6 +1738,11 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
           <div class="form-row"><span class="form-row-label">自动滚动到底部</span><input type="checkbox" id="autoScroll" checked></div>
         </div>
       </div>
+      <button type="button" class="save-btn" id="saveChatSettingsBtn">保存</button>
+    </div>
+
+    <!-- 高级功能 -->
+    <div class="settings-panel" id="panel-advanced">
       <div class="form-group">
         <label class="form-label">联网搜索</label>
         <div class="form-section">
@@ -1651,45 +1754,10 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
         <label class="form-label">深度思考</label>
         <div class="form-section">
           <div class="form-row"><span class="form-row-label">启用深度思考模式</span><input type="checkbox" id="thinkingEnabled"></div>
-          <div class="form-group" style="margin-top:0.5rem;margin-bottom:0"><label class="form-label" style="font-weight:400;font-size:0.75rem">思考提示词（留空使用默认）</label><textarea class="form-textarea" id="thinkingPrompt" rows="2" style="font-size:0.82rem" placeholder="请先进行深入的思考和推理，将你的分析过程写在thinking中..."></textarea></div>
+          <div class="form-group" style="margin-top:0.5rem;margin-bottom:0"><label class="form-label" style="font-weight:400;font-size:0.75rem">思考提示词（留空使用默认）</label><textarea class="form-textarea" id="thinkingPrompt" rows="2" style="font-size:0.82rem" placeholder="请先进行深入的思考和推理..."></textarea></div>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">模型预设一键填充</label>
-        <div><p class="preset-label">OpenAI</p><div class="preset-grid">
-          <button type="button" class="preset-btn model-preset" data-base="https://api.openai.com/v1" data-model="gpt-4o">GPT-4o</button>
-          <button type="button" class="preset-btn model-preset" data-base="https://api.openai.com/v1" data-model="gpt-4o-mini">4o-mini</button>
-          <button type="button" class="preset-btn model-preset" data-base="https://api.openai.com/v1" data-model="o1-mini">o1-mini</button>
-        </div></div>
-        <div><p class="preset-label">DeepSeek</p><div class="preset-grid">
-          <button type="button" class="preset-btn model-preset" data-base="https://api.deepseek.com" data-model="deepseek-chat">DeepSeek-V3</button>
-          <button type="button" class="preset-btn model-preset" data-base="https://api.deepseek.com" data-model="deepseek-reasoner">DeepSeek-R1</button>
-        </div></div>
-        <div><p class="preset-label">通义千问</p><div class="preset-grid">
-          <button type="button" class="preset-btn model-preset" data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-model="qwen-plus">Qwen-Plus</button>
-          <button type="button" class="preset-btn model-preset" data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-model="qwen-max">Qwen-Max</button>
-          <button type="button" class="preset-btn model-preset" data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-model="qwen-turbo-latest">Qwen-Turbo</button>
-        </div></div>
-        <div><p class="preset-label">Anthropic</p><div class="preset-grid">
-          <button type="button" class="preset-btn model-preset" data-base="https://api.anthropic.com/v1" data-model="claude-3-5-sonnet-20240620">Claude 3.5</button>
-          <button type="button" class="preset-btn model-preset" data-base="https://api.anthropic.com/v1" data-model="claude-3-opus-20240229">Claude 3 Opus</button>
-          <button type="button" class="preset-btn model-preset" data-base="https://api.anthropic.com/v1" data-model="claude-3-haiku-20240307">Haiku</button>
-        </div></div>
-        <div><p class="preset-label">Ollama 本地</p><div class="preset-grid">
-          <button type="button" class="preset-btn model-preset" data-base="http://localhost:11434/v1" data-model="llama3.1">Llama 3.1</button>
-          <button type="button" class="preset-btn model-preset" data-base="http://localhost:11434/v1" data-model="mistral">Mistral</button>
-          <button type="button" class="preset-btn model-preset" data-base="http://localhost:11434/v1" data-model="gemma2">Gemma 2</button>
-          <button type="button" class="preset-btn model-preset" data-base="http://localhost:11434/v1" data-model="qwen2.5">Qwen2.5</button>
-          <button type="button" class="preset-btn model-preset" data-base="http://localhost:11434/v1" data-model="deepseek-r1">DeepSeek R1</button>
-          <button type="button" class="preset-btn model-preset" data-base="http://localhost:11434/v1" data-model="phi3">Phi-3</button>
-        </div></div>
-        <div><p class="preset-label">豆包</p><div class="preset-grid">
-          <button type="button" class="preset-btn model-preset" data-base="https://api.doubao.com/v1" data-model="doubao-pro-32k">豆包 Pro</button>
-          <button type="button" class="preset-btn model-preset" data-base="https://api.doubao.com/v1" data-model="doubao-pro-128k">Pro 128K</button>
-          <button type="button" class="preset-btn model-preset" data-base="https://api.doubao.com/v1" data-model="doubao-lite-32k">豆包 Lite</button>
-        </div></div>
-      </div>
-      <button type="button" class="save-btn" id="saveSettingsBtn">保存设置</button>
+      <button type="button" class="save-btn" id="saveAdvancedSettingsBtn">保存</button>
     </div>
   </div>
 </div>
@@ -2030,7 +2098,7 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme(currentTheme);
 
   // 加载设置
-  if ($('apiBaseUrl')) $('apiBaseUrl').value = settings.apiBaseUrl;
+  // apiBaseUrl now set from PROVIDERS config
   if ($('apiKey')) $('apiKey').value = settings.apiKey;
   if ($('modelName')) $('modelName').value = settings.modelName;
   if ($('systemPrompt')) $('systemPrompt').value = settings.systemPrompt;
@@ -2045,30 +2113,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($('searchEnabled')) $('searchEnabled').checked = settings.searchEnabled || false;
   isSearchMode = settings.searchEnabled || false;
   updateSearchUI();
-
-  // 模型快速选择器
-  const modelSelect = document.getElementById('modelSelect');
-  if (modelSelect) {
-    modelSelect.addEventListener('change', () => {
-      const val = modelSelect.value;
-      if (!val) return;
-      const [provider, baseUrl, model] = val.split('|');
-      // 检查是否已配置该 provider 的 API Key
-      const keyMap = { deepseek: 'sk-', openai: 'sk-', claude: 'sk-ant-', qwen: 'sk-', ollama: '' };
-      const keyPrefix = keyMap[provider] || '';
-      if (provider !== 'ollama' && (!settings.apiKey || !settings.apiKey.startsWith(keyPrefix))) {
-        showToast(`请先在设置中配置 ${provider} 的 API Key`, 'warning');
-        settingsModal?.classList.add('show');
-        return;
-      }
-      settings.apiBaseUrl = baseUrl;
-      settings.modelName = model;
-      localStorage.setItem('xingyun_settings', JSON.stringify(settings));
-      if ($('apiBaseUrl')) $('apiBaseUrl').value = baseUrl;
-      if ($('modelName')) $('modelName').value = model;
-      showToast(`已切换到 ${modelSelect.options[modelSelect.selectedIndex].text}`, 'success');
-    });
-  }
 
   if ($('thinkingEnabled')) $('thinkingEnabled').checked = settings.thinkingEnabled || false;
   if ($('thinkingPrompt')) $('thinkingPrompt').value = settings.thinkingPrompt || '';
@@ -2445,32 +2489,156 @@ document.addEventListener('DOMContentLoaded', () => {
   if (closeSettingsBtn) closeSettingsBtn.onclick = () => settingsModal?.classList.remove('show');
   if (settingsModal) settingsModal.onclick = (e) => e.target === settingsModal && settingsModal.classList.remove('show');
 
-  if (saveSettingsBtn) {
-    saveSettingsBtn.addEventListener('click', (e) => {
-      e.preventDefault(); e.stopPropagation();
+  // ========== 厂商配置 ==========
+  const PROVIDERS = {
+    deepseek: { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com', modelsUrl: '/models', hint: '免费注册即送 500 万 Token', icon: 'DS' },
+    openai:   { name: 'OpenAI',   baseUrl: 'https://api.openai.com/v1', modelsUrl: '/models', hint: '需要绑卡付费', icon: 'AI' },
+    claude:   { name: 'Claude',    baseUrl: 'https://api.anthropic.com/v1', modelsUrl: null, hint: '最新 Claude Sonnet 4 / Opus 4', icon: 'Cl', models: ['claude-sonnet-4-20250514', 'claude-opus-4-20250918', 'claude-haiku-4-20250414'] },
+    qwen:     { name: '通义千问',  baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', modelsUrl: '/models', hint: '阿里云大模型，兼容 OpenAI 格式', icon: 'Qw' },
+    doubao:   { name: '豆包',      baseUrl: 'https://api.doubao.com/v1', modelsUrl: '/models', hint: '字节跳动大模型', icon: '豆' },
+    ollama:   { name: 'Ollama',    baseUrl: 'http://localhost:11434/v1', modelsUrl: '/models', hint: '本地部署，无需 API Key', icon: 'Ol' },
+  };
+  let currentProvider = settings.provider || 'deepseek';
+
+  // 初始化厂商选择
+  document.querySelectorAll('.provider-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.provider-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      currentProvider = card.dataset.provider;
+      const p = PROVIDERS[currentProvider];
+      if ($('apiKeyHint')) $('apiKeyHint').textContent = p.hint;
+      if ($('apiKey')) $('apiKey').placeholder = currentProvider === 'ollama' ? '无需 API Key' : '粘贴你的 API Key...';
+      // 清空模型列表
+      if ($('modelListGroup')) $('modelListGroup').style.display = 'none';
+      if ($('modelList')) $('modelList').innerHTML = '';
+    });
+  });
+
+  // 获取模型列表
+  const fetchModelsBtn = document.getElementById('fetchModelsBtn');
+  if (fetchModelsBtn) {
+    fetchModelsBtn.addEventListener('click', async () => {
+      const p = PROVIDERS[currentProvider];
+      const apiKey = $('apiKey')?.value?.trim();
+      if (!p.modelsUrl) {
+        // 没有 models 接口，使用预设列表
+        renderModelList(p.models || []);
+        return;
+      }
+      if (currentProvider !== 'ollama' && !apiKey) {
+        showToast('请先填写 API Key', 'warning');
+        return;
+      }
+      fetchModelsBtn.disabled = true;
+      fetchModelsBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 获取中...';
       try {
-        settings.apiBaseUrl = $('apiBaseUrl')?.value.trim() || '';
-        settings.apiKey = $('apiKey')?.value.trim() || '';
-        settings.modelName = $('modelName')?.value.trim() || '';
-        settings.systemPrompt = $('systemPrompt')?.value.trim() || '';
-        settings.prefixPrompt = $('prefixPrompt')?.value.trim() || '';
-        settings.suffixPrompt = $('suffixPrompt')?.value.trim() || '';
-        settings.temperature = parseFloat(temperatureSlider?.value) || 0.7;
-        settings.maxContextRounds = parseInt($('maxContextRounds')?.value) || 20;
-        settings.autoScroll = autoScrollCheckbox?.checked ?? true;
-        settings.globalMemory = globalMemoryInput?.value.trim() || '';
-        settings.searchApiUrl = $('searchApiUrl')?.value.trim() || '';
-        settings.searchEnabled = $('searchEnabled')?.checked || false;
-        isSearchMode = settings.searchEnabled;
-        updateSearchUI();
-        settings.thinkingEnabled = $('thinkingEnabled')?.checked || false;
-        settings.thinkingPrompt = $('thinkingPrompt')?.value.trim() || '';
-        isThinkingMode = settings.thinkingEnabled;
-        updateThinkingUI();
-        localStorage.setItem('aiSettings', JSON.stringify(settings));
-        settingsModal?.classList.remove('show');
-        showToast('设置已保存', 'success');
-      } catch(err) { console.error('保存失败:', err); }
+        const headers = { 'Content-Type': 'application/json' };
+        if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+        const resp = await fetch(p.baseUrl + p.modelsUrl, { headers });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const models = (data.data || data.models || []).map(m => m.id || m.name).filter(Boolean).sort();
+        if (models.length === 0) throw new Error('未找到可用模型');
+        renderModelList(models);
+        showToast(`获取到 ${models.length} 个模型`, 'success');
+      } catch (err) {
+        showToast('获取失败: ' + err.message, 'error');
+        // 回退到预设列表
+        if (p.models) renderModelList(p.models);
+      } finally {
+        fetchModelsBtn.disabled = false;
+        fetchModelsBtn.innerHTML = '<i class="fa fa-refresh"></i> 获取模型';
+      }
+    });
+  }
+
+  function renderModelList(models) {
+    const list = document.getElementById('modelList');
+    const group = document.getElementById('modelListGroup');
+    if (!list || !group) return;
+    if (models.length === 0) { group.style.display = 'none'; return; }
+    group.style.display = 'block';
+    list.innerHTML = models.map(id =>
+      `<label class="model-item${id === settings.modelName ? ' selected' : ''}">
+        <input type="radio" name="modelRadio" value="${id}" ${id === settings.modelName ? 'checked' : ''}>
+        <span class="model-item-name">${id}</span>
+      </label>`
+    ).join('');
+    list.querySelectorAll('input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        list.querySelectorAll('.model-item').forEach(i => i.classList.remove('selected'));
+        radio.closest('.model-item').classList.add('selected');
+        if ($('modelName')) $('modelName').value = radio.value;
+      });
+    });
+  }
+
+  // 保存设置
+  function saveAllSettings() {
+    settings.provider = currentProvider;
+    settings.apiBaseUrl = PROVIDERS[currentProvider].baseUrl;
+    settings.apiKey = $('apiKey')?.value.trim() || '';
+    settings.modelName = $('modelName')?.value.trim() || '';
+    settings.systemPrompt = $('systemPrompt')?.value.trim() || '';
+    settings.prefixPrompt = $('prefixPrompt')?.value.trim() || '';
+    settings.suffixPrompt = $('suffixPrompt')?.value.trim() || '';
+    settings.temperature = parseFloat(temperatureSlider?.value) || 0.7;
+    settings.maxContextRounds = parseInt($('maxContextRounds')?.value) || 20;
+    settings.autoScroll = autoScrollCheckbox?.checked ?? true;
+    settings.globalMemory = globalMemoryInput?.value.trim() || '';
+    settings.searchApiUrl = $('searchApiUrl')?.value.trim() || '';
+    settings.searchEnabled = $('searchEnabled')?.checked || false;
+    isSearchMode = settings.searchEnabled; updateSearchUI();
+    settings.thinkingEnabled = $('thinkingEnabled')?.checked || false;
+    settings.thinkingPrompt = $('thinkingPrompt')?.value.trim() || '';
+    isThinkingMode = settings.thinkingEnabled; updateThinkingUI();
+    localStorage.setItem('aiSettings', JSON.stringify(settings));
+    updateModelIndicator();
+    settingsModal?.classList.remove('show');
+    showToast('设置已保存', 'success');
+  }
+
+  // 三个保存按钮
+  ['saveSettingsBtn', 'saveChatSettingsBtn', 'saveAdvancedSettingsBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); saveAllSettings(); });
+  });
+
+  // 标签页切换
+  document.querySelectorAll('.settings-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab)?.classList.add('active');
+    });
+  });
+
+  // 模型指示器
+  function updateModelIndicator() {
+    const indicator = document.getElementById('modelIndicatorText');
+    if (!indicator) return;
+    if (settings.modelName) {
+      indicator.textContent = settings.modelName;
+      document.getElementById('modelIndicator')?.classList.remove('unconfigured');
+    } else {
+      indicator.textContent = '点击配置模型';
+      document.getElementById('modelIndicator')?.classList.add('unconfigured');
+    }
+  }
+  updateModelIndicator();
+
+  // 点击模型指示器打开设置
+  const modelIndicator = document.getElementById('modelIndicator');
+  if (modelIndicator) {
+    modelIndicator.addEventListener('click', () => {
+      settingsModal?.classList.add('show');
+      // 激活模型标签页
+      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.settings-tab[data-tab="model"]')?.classList.add('active');
+      document.getElementById('panel-model')?.classList.add('active');
     });
   }
 
@@ -2539,10 +2707,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (closeShortcutBtn) closeShortcutBtn.onclick = () => shortcutModal?.classList.remove('show');
   if (shortcutModal) shortcutModal.onclick = (e) => e.target === shortcutModal && shortcutModal.classList.remove('show');
 
-  document.querySelectorAll('.model-preset').forEach(btn => btn.addEventListener('click', () => {
-    if ($('apiBaseUrl')) $('apiBaseUrl').value = btn.dataset.base;
-    if ($('modelName')) $('modelName').value = btn.dataset.model;
-  }));
   document.querySelectorAll('.prompt-preset').forEach(btn => btn.addEventListener('click', () => {
     if ($('systemPrompt')) $('systemPrompt').value = btn.dataset.prompt;
   }));
