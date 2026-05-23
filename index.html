@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>星云AI · Pro</title>
+<title>星云AI · Ultra</title>
 <script>window._cdnFail=0;window._cdnDone=false;function _cdnErr(){window._cdnFail++;setTimeout(function(){if(!window._cdnDone){var fb=document.getElementById('cdnFallback');if(fb)fb.classList.add('show');}},500);}</script>
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" onerror="_cdnErr()">
 <script src="https://cdn.bootcdn.net/ajax/libs/marked/12.0.0/marked.min.js" onerror="_cdnErr()"></script>
@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" onerror="_cdnErr()">
 <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css" onerror="_cdnErr()">
 <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js" onerror="_cdnErr()"></script>
+<script src="https://cdn.jsdelivr.net/npm/pocketbase@0.38.2/dist/pocketbase.umd.min.js" onerror="_cdnErr()"></script>
 <style>
 :root {
   --bg: #f5f3ef;
@@ -115,7 +116,6 @@ body {
     radial-gradient(ellipse 50% 50% at 50% 50%, rgba(168,92,50,0.02), transparent);
   color: var(--ink);
   min-height: 100vh;
-  min-height: 100dvh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -124,7 +124,6 @@ body {
 .app-wrapper {
   display: flex;
   height: 100vh;
-  height: 100dvh;
   position: relative;
   z-index: 10;
   overflow: hidden;
@@ -284,7 +283,6 @@ body {
   margin: 0 auto;
   padding: 1.5rem 1rem;
   height: 100vh;
-  height: 100dvh;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -1400,6 +1398,17 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
   .preset-btn { padding: 0.4rem 0.3rem; font-size: 0.68rem; }
 }
 
+/* === 新增功能样式 === */
+.sidebar-search { padding: 0.4rem 0.75rem; }
+.sidebar-search input { transition: border-color 0.2s; }
+.sidebar-search input:focus { border-color: var(--primary); outline: none; }
+#visualContainer svg text { pointer-events: none; }
+#visualContainer svg g:hover rect { filter: brightness(0.95); }
+.auth-user-info { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: var(--accent-soft); border-radius: 8px; margin-bottom: 0.5rem; }
+.cloud-sync-indicator { position: fixed; bottom: 0.5rem; right: 0.5rem; font-size: 0.7rem; color: var(--ink-muted); background: var(--card); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border); z-index: 100; }
+.cloud-sync-indicator.syncing { color: var(--primary); }
+.cloud-sync-indicator.synced { color: var(--success); }
+
 /* === Landscape Phone === */
 @media(max-height: 500px) and (orientation: landscape) {
   .app-shell { padding: 0.3rem 0.5rem; }
@@ -1460,10 +1469,12 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
         <button class="icon-btn" id="memoryBtn" title="全局记忆"><i class="fa fa-address-book-o"></i></button>
         <button class="icon-btn" id="thinkingToggleBtn" title="深度思考"><i class="fa fa-lightbulb-o"></i></button>
         <button class="icon-btn" id="searchToggleBtn" title="联网搜索"><i class="fa fa-globe"></i></button>
+        <button class="icon-btn" id="visualBtn" title="可视化模式 (tldraw)"><i class="fa fa-object-group"></i></button>
         <button class="icon-btn" id="branchBtn" title="分支视图"><i class="fa fa-code-fork"></i></button>
         <button class="icon-btn" id="exportBtn" title="导出对话 (Ctrl+Shift+E)"><i class="fa fa-download"></i></button>
         <button class="icon-btn" id="clearBtn" title="清空对话 (Ctrl+Shift+X)"><i class="fa fa-trash-o"></i></button>
         <button class="icon-btn" id="themeBtn" title="切换主题"><i class="fa fa-moon-o"></i></button>
+        <button class="icon-btn" id="authBtn" title="登录/注册"><i class="fa fa-user"></i></button>
         <button class="icon-btn" id="settingsBtn" title="设置 (Ctrl+,)"><i class="fa fa-cog"></i></button>
         <button class="icon-btn mobile-menu-btn" id="mobileMenuBtn" title="菜单"><i class="fa fa-bars"></i></button>
       </div>
@@ -1600,6 +1611,37 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
   </div>
 </div>
 
+<!-- 用户认证模态框 -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal-content glass" style="max-width:28rem">
+    <div class="modal-header">
+      <h2 class="modal-title" id="authModalTitle">登录</h2>
+      <button class="icon-btn" id="closeAuthBtn"><i class="fa fa-times"></i></button>
+    </div>
+    <div id="authForm">
+      <div class="form-group"><label class="form-label">邮箱</label><input type="email" class="form-input" id="authEmail" placeholder="your@email.com"></div>
+      <div class="form-group"><label class="form-label">密码</label><input type="password" class="form-input" id="authPassword" placeholder="至少8位" autocomplete="off"></div>
+      <div class="form-group" id="authNicknameGroup" style="display:none"><label class="form-label">昵称</label><input type="text" class="form-input" id="authNickname" placeholder="你的昵称"></div>
+      <div style="display:flex;gap:0.5rem;margin-top:1rem">
+        <button class="send-btn" id="authSubmitBtn" style="flex:1">登录</button>
+        <button class="stop-btn" id="authToggleBtn" style="flex:1;background:var(--surface);color:var(--ink-2);border:1px solid var(--border)">切换注册</button>
+      </div>
+      <p id="authStatus" style="font-size:0.8rem;color:var(--ink-3);margin-top:0.5rem;text-align:center"></p>
+    </div>
+  </div>
+</div>
+
+<!-- 可视化模式模态框 -->
+<div class="modal-overlay" id="visualModal">
+  <div class="modal-content glass" style="max-width:90vw;max-height:90vh;width:1200px;height:700px">
+    <div class="modal-header">
+      <h2 class="modal-title">对话可视化</h2>
+      <button class="icon-btn" id="closeVisualBtn"><i class="fa fa-times"></i></button>
+    </div>
+    <div id="visualContainer" style="flex:1;overflow:hidden;border-radius:8px;background:var(--surface)"></div>
+  </div>
+</div>
+
 <!-- 移动端抽屉菜单 -->
 <div class="mobile-drawer-backdrop" id="drawerBackdrop"></div>
 <div class="mobile-drawer" id="mobileDrawer">
@@ -1646,15 +1688,17 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
 <script>
 // CDN 加载检测 — 只在真正失败时显示
 window.addEventListener('DOMContentLoaded', () => {
-  // 备用：8秒后如果 CDN 还没加载完才显示错误
+  // 标记 CDN 已成功加载
+  if (typeof marked !== 'undefined' && typeof hljs !== 'undefined' && typeof hljs.getLanguage === 'function') {
+    window._cdnDone = true;
+    const fb = document.getElementById('cdnFallback');
+    if (fb) fb.classList.remove('show');
+  }
+  // 备用：8秒后如果 CDN 还没加载完也显示
   setTimeout(() => {
-    if (typeof marked === 'undefined' || typeof hljs === 'undefined') {
+    if (!window._cdnDone) {
       const fb = document.getElementById('cdnFallback');
       if (fb) fb.classList.add('show');
-    } else {
-      window._cdnDone = true;
-      const fb = document.getElementById('cdnFallback');
-      if (fb) fb.classList.remove('show');
     }
   }, 8000);
 });
@@ -1707,19 +1751,16 @@ class ConvTree {
   activeBranch() { return this.activeLeafId ? this.pathTo(this.activeLeafId) : []; }
   branchFrom(nodeId, newContent) {
     const orig = this.nodes.get(nodeId); if (!orig) return null;
+    if (orig.parentId) {
+      const p = this.nodes.get(orig.parentId);
+      const idx = p.children.indexOf(nodeId);
+      if (idx !== -1) p.children.splice(idx, 1);
+    }
     const newId = this.add(orig.role, newContent, orig.parentId);
     const newNode = this.nodes.get(newId);
     newNode.thinking = orig.thinking;
-    if (orig.parentId) {
-      const p = this.nodes.get(orig.parentId);
-      if (p) {
-        const idx = p.children.indexOf(nodeId);
-        if (idx !== -1) p.children.splice(idx, 1);
-      }
-    }
     newNode.children = [...orig.children];
     orig.children.forEach(cid => { const c = this.nodes.get(cid); if (c) c.parentId = newId; });
-    orig.children = [];
     this.activeLeafId = newId;
     return newId;
   }
@@ -1762,7 +1803,7 @@ class ConvTree {
         this.nodes.set(id, node);
       });
     }
-    this.activeLeafId = data.activeLeafId && this.nodes.has(data.activeLeafId) ? data.activeLeafId : (data.nodes?.length ? data.nodes[data.nodes.length - 1][0] : null);
+    this.activeLeafId = data.activeLeafId || (data.nodes?.length ? data.nodes[data.nodes.length - 1][0] : null);
     this.convId = data.convId || ('conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
   }
 }
@@ -1825,7 +1866,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function highlightAndCopy(container) {
     if (!container || typeof hljs === 'undefined') return;
-    container.querySelectorAll('pre code:not(.hljs)').forEach(block => {
+    container.querySelectorAll('pre code').forEach(block => {
       hljs.highlightElement(block);
       const pre = block.parentElement; pre.style.position = 'relative';
       if (!pre.querySelector('.code-copy-btn')) {
@@ -1855,24 +1896,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let abortController = null, isGenerating = false, isSearchMode = false, isThinkingMode = false;
   const convTree = new ConvTree();
 
-  // 记录当前对话到历史（提前定义，供多处调用）
-  function recordCurrentConv() {
-    const branch = convTree.activeBranch();
-    const firstUser = branch.find(n => n.role === 'user');
-    const title = firstUser ? firstUser.content.slice(0, 30) : '新对话';
-    const list = (() => { const s = localStorage.getItem('convHistory'); try { return s ? JSON.parse(s) : []; } catch(_) { return []; } })();
-    const existing = list.find(c => c.id === convTree.convId);
-    if (existing) { existing.title = title; existing.time = Date.now(); }
-    else { list.unshift({ id: convTree.convId, title, time: Date.now() }); }
-    if (list.length > 50) list.length = 50;
-    localStorage.setItem('convHistory', JSON.stringify(list));
-    localStorage.setItem(convTree.convId, JSON.stringify(convTree.toJSON()));
-    if (typeof renderHistoryList === 'function') renderHistoryList();
-  }
-
-  let settings;
-  try { settings = JSON.parse(localStorage.getItem('aiSettings')); } catch(_) { settings = null; }
-  settings = settings || {
+  let settings = JSON.parse(localStorage.getItem('aiSettings')) || {
     apiBaseUrl: 'https://api.doubao.com/v1', apiKey: '', modelName: 'doubao-pro-32k',
     systemPrompt: '你是一个乐于助人的AI助手，回答尽可能使用LaTeX公式。',
     prefixPrompt: '', suffixPrompt: '', temperature: 0.7, maxContextRounds: 20,
@@ -1894,7 +1918,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (themeBtn) themeBtn.innerHTML = `<i class="fa ${icons[idx]}"></i>`;
   }
   applyTheme(currentTheme);
-  window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change', () => { if (currentTheme === 0) applyTheme(0); });
 
   // 加载设置
   if ($('apiBaseUrl')) $('apiBaseUrl').value = settings.apiBaseUrl;
@@ -1936,9 +1959,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const conflicts = detectMemoryConflict(oldMem, newMem);
     if (conflicts && memoryConflictAlert) {
       if (memoryPanel) memoryPanel.classList.add('open');
-      const safeHtml = `<i class="fa fa-exclamation-triangle" style="margin-right:4px"></i>检测到 ${conflicts.length} 处潜在冲突：<br>` +
-        conflicts.map(c => `• "${escapeHtml(c.old)}" → "${escapeHtml(c.new)}" (相似度 ${(c.similarity * 100).toFixed(0)}%)`).join('<br>');
-      memoryConflictAlert.innerHTML = safeHtml;
+      memoryConflictAlert.innerHTML = `<i class="fa fa-exclamation-triangle" style="margin-right:4px"></i>检测到 ${conflicts.length} 处潜在冲突：<br>` +
+        conflicts.map(c => `• "${c.old}" → "${c.new}" (相似度 ${(c.similarity * 100).toFixed(0)}%)`).join('<br>');
       memoryConflictAlert.classList.add('show');
     } else if (memoryConflictAlert) {
       memoryConflictAlert.classList.remove('show');
@@ -2008,9 +2030,9 @@ document.addEventListener('DOMContentLoaded', () => {
     div.dataset.nodeId = node.id;
     const hasBranches = convTree.getSiblings(node.id).length > 0 || node.children.length > 1;
     if (hasBranches) div.classList.add('has-branches');
-    const escaped = node.content.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#39;');
+    const escaped = node.content.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const isUser = node.role === 'user';
-    const thinkingHtml = (!isUser && node.thinking) ? `<details class="thinking-block"><summary><i class="fa fa-lightbulb-o"></i> 深度思考<span class="thinking-status">思考完成</span></summary><div class="thinking-content">${sanitizeHtml(marked.parse(node.thinking))}</div></details>` : '';
+    const thinkingHtml = (!isUser && node.thinking) ? `<details class="thinking-block"><summary><i class="fa fa-lightbulb-o"></i> 深度思考<span class="thinking-status">思考完成</span></summary><div class="thinking-content">${marked.parse(node.thinking)}</div></details>` : '';
     div.innerHTML = `
       <div class="avatar ${isUser ? 'user-avatar' : 'ai-avatar'}">${isUser ? '我' : 'AI'}</div>
       <div class="msg-body">
@@ -2041,7 +2063,6 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelBtn.onclick = () => { div.classList.remove('editing'); };
     confirmBtn.onclick = async () => {
       const newContent = textarea?.value.trim(); if (!newContent) return;
-      if (confirmBtn.disabled) return; confirmBtn.disabled = true;
       div.classList.remove('editing');
       convTree.branchFrom(node.id, newContent);
       const newNode = convTree.nodes.get(convTree.activeLeafId);
@@ -2085,15 +2106,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function escapeHtml(text) {
     const div = document.createElement('div'); div.textContent = text; return div.innerHTML;
   }
-  function sanitizeHtml(html) {
-    const template = document.createElement('template');
-    template.innerHTML = html;
-    template.content.querySelectorAll('script,style,iframe,object,embed,form,input[onchange],img[onerror]').forEach(el => el.remove());
-    template.content.querySelectorAll('*').forEach(el => {
-      [...el.attributes].forEach(attr => { if (/^on/i.test(attr.name)) el.removeAttribute(attr.name); });
-    });
-    return template.innerHTML;
-  }
 
   // 导出
   if (exportBtn) exportBtn.onclick = () => {
@@ -2102,9 +2114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let md = `# 星云AI 对话记录\n\n**导出时间**：${new Date().toLocaleString()}\n**模型**：${settings.modelName}\n\n---\n\n`;
     msgs.forEach(m => { md += `**${m.role === 'user' ? '用户' : 'AI'}**：\n\n${m.content}\n\n---\n\n`; });
     const blob = new Blob([md], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `星云AI_${new Date().toISOString().slice(0,10)}.md`; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `星云AI_${new Date().toISOString().slice(0,10)}.md`; a.click();
   };
 
   // 聊天提交
@@ -2140,8 +2150,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const searchCtrl = new AbortController();
             const searchTimeout = setTimeout(() => searchCtrl.abort(), 5000);
             try {
-              const searchUrl = settings.searchApiUrl.includes('?') ? settings.searchApiUrl + query : settings.searchApiUrl + '?q=' + query;
-              const resp = await fetch(searchUrl, { signal: searchCtrl.signal });
+              const resp = await fetch(settings.searchApiUrl + query, { signal: searchCtrl.signal });
               clearTimeout(searchTimeout);
               if (resp.ok) {
                 const data = await resp.json();
@@ -2166,16 +2175,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const history = branch.filter(n => n.role !== 'system').map(n => ({ role: n.role, content: n.content }));
       const lastUserIdx = history.map(m => m.role).lastIndexOf('user');
       if (lastUserIdx !== -1) {
-        const prefix = settings.prefixPrompt || '';
-        const suffix = settings.suffixPrompt || '';
-        history[lastUserIdx].content = `${prefix}${history[lastUserIdx].content}${suffix}`;
+        history[lastUserIdx].content = `${settings.prefixPrompt}${history[lastUserIdx].content}${settings.suffixPrompt}`;
       }
       const maxMsgs = settings.maxContextRounds * 2;
       const trimmed = history.length > maxMsgs ? history.slice(-maxMsgs) : history;
       reqMessages.push(...trimmed);
 
-      const baseUrl = (settings.apiBaseUrl || '').replace(/\/+$/, '');
-      const resp = await fetch(`${baseUrl}/chat/completions`, {
+      const resp = await fetch(`${settings.apiBaseUrl}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` },
         body: JSON.stringify({ model: settings.modelName, messages: reqMessages, temperature: parseFloat(settings.temperature), stream: true, max_tokens: 4096 }),
@@ -2187,15 +2193,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const reader = resp.body.getReader(), decoder = new TextDecoder();
       const aiEl = createEmptyAIMessage();
       let full = '', fullThinking = '';
-      let sseBuffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        sseBuffer += decoder.decode(value, { stream: true });
-        const lines = sseBuffer.split('\n');
-        sseBuffer = lines.pop(); // keep incomplete last line in buffer
-        for (const line of lines.filter(l => l.trim())) {
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n').filter(l => l.trim())) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6);
           if (data === '[DONE]') continue;
@@ -2210,7 +2213,7 @@ document.addEventListener('DOMContentLoaded', () => {
               const thinkDiv = aiEl.querySelector('.thinking-content');
               const thinkBlock = aiEl.querySelector('.thinking-block');
               const thinkStatus = aiEl.querySelector('.thinking-status');
-              if (thinkDiv) thinkDiv.innerHTML = sanitizeHtml(marked.parse(fullThinking));
+              if (thinkDiv) thinkDiv.innerHTML = marked.parse(fullThinking);
               if (thinkBlock) thinkBlock.classList.add('streaming');
               if (thinkStatus) thinkStatus.textContent = '思考中...';
               if (settings.autoScroll && chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -2230,7 +2233,7 @@ document.addEventListener('DOMContentLoaded', () => {
               highlightAndCopy(aiEl);
               if (settings.autoScroll && chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
             }
-          } catch(e) { console.debug('SSE parse skip:', e.message); }
+          } catch(_) {}
         }
       }
       // 流结束，最终更新思考状态
@@ -2302,7 +2305,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function stopGenerating() { isGenerating = false; abortController = null; if (sendBtn) sendBtn.disabled = false; if (stopBtn) stopBtn.classList.remove('show'); if (messageInput) messageInput.disabled = false; }
 
   if (stopBtn) stopBtn.onclick = () => abortController?.abort();
-  if (clearBtn) clearBtn.onclick = () => { if (confirm('确定清空所有对话？')) { if (isGenerating) abortController?.abort(); recordCurrentConv(); convTree.nodes.clear(); convTree.activeLeafId = null; saveTree(); addWelcomeMessage(); } };
+  if (clearBtn) clearBtn.onclick = () => { if (confirm('确定清空所有对话？')) { recordCurrentConv(); convTree.nodes.clear(); convTree.activeLeafId = null; saveTree(); addWelcomeMessage(); } };
   if (themeBtn) themeBtn.onclick = () => { currentTheme = (currentTheme + 1) % 3; applyTheme(currentTheme); settings.theme = currentTheme; localStorage.setItem('aiSettings', JSON.stringify(settings)); };
   if (settingsBtn) settingsBtn.onclick = () => settingsModal?.classList.add('show');
   if (closeSettingsBtn) closeSettingsBtn.onclick = () => settingsModal?.classList.remove('show');
@@ -2347,11 +2350,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchToggleBtn) searchToggleBtn.onclick = () => { isSearchMode = !isSearchMode; updateSearchUI(); };
 
   function formatSearchResults(data) {
-    if (data == null) return '';
-    if (typeof data === 'string') return data.slice(0, 2000);
+    if (typeof data === 'string') return data;
     if (Array.isArray(data)) return data.filter(item => item && typeof item === 'object').map((item, i) => `${i + 1}. ${item.title || ''}: ${item.snippet || item.content || ''}`).join('\n');
     if (data.results && Array.isArray(data.results)) return formatSearchResults(data.results);
-    return JSON.stringify(data).slice(0, 2000);
+    return typeof data === 'string' ? data.slice(0, 2000) : JSON.stringify(data).slice(0, 2000);
   }
 
   if (branchBtn) branchBtn.onclick = () => { renderBranchTree(); branchModal?.classList.add('show'); };
@@ -2413,8 +2415,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (messageInput) {
     messageInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !isGenerating) { e.preventDefault(); chatForm?.dispatchEvent(new Event('submit')); }
-      else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !isGenerating) { e.preventDefault(); chatForm?.dispatchEvent(new Event('submit')); }
+      if (e.key === 'Enter' && !e.shiftKey && !isGenerating) { e.preventDefault(); chatForm?.dispatchEvent(new Event('submit')); }
     });
     // 自动调整输入框高度
     messageInput.addEventListener('input', () => {
@@ -2535,9 +2536,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   renderHistoryList();
 
+  // 记录当前对话到历史
+  function recordCurrentConv() {
+    const branch = convTree.activeBranch();
+    const firstUser = branch.find(n => n.role === 'user');
+    const title = firstUser ? firstUser.content.slice(0, 30) : '新对话';
+    addConvToList(convTree.convId, title);
+    localStorage.setItem(convTree.convId, JSON.stringify(convTree.toJSON()));
+  }
+
   // 新建对话
   if (newChatBtn) newChatBtn.onclick = () => {
-    if (isGenerating) abortController?.abort();
     recordCurrentConv();
     convTree.nodes.clear(); convTree.activeLeafId = null;
     convTree.convId = 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
@@ -2550,6 +2559,290 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sidebarShortcutBtn) sidebarShortcutBtn.onclick = () => shortcutModal?.classList.add('show');
 
 });
+
+// ========== PocketBase 云端同步 ==========
+let pb = null;
+let currentUser = null;
+
+function initPocketBase(url) {
+  if (!window.PocketBase) { showToast('PocketBase SDK 未加载', 'error'); return false; }
+  try {
+    pb = new PocketBase(url);
+    const saved = localStorage.getItem('xingyun_pb_url');
+    if (!saved) localStorage.setItem('xingyun_pb_url', url);
+    return true;
+  } catch (e) { showToast('PocketBase 连接失败: ' + e.message, 'error'); return false; }
+}
+
+// 尝试自动连接
+const savedPbUrl = localStorage.getItem('xingyun_pb_url');
+if (savedPbUrl) initPocketBase(savedPbUrl);
+
+// 认证 UI
+const authModal = document.getElementById('authModal');
+const authBtn = document.getElementById('authBtn');
+const closeAuthBtn = document.getElementById('closeAuthBtn');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+const authToggleBtn = document.getElementById('authToggleBtn');
+const authNicknameGroup = document.getElementById('authNicknameGroup');
+const authModalTitle = document.getElementById('authModalTitle');
+const authStatus = document.getElementById('authStatus');
+let isRegisterMode = false;
+
+if (authBtn) authBtn.onclick = () => {
+  if (currentUser) {
+    if (confirm('确定要退出登录吗？')) {
+      pb?.authStore.clear();
+      currentUser = null;
+      showToast('已退出登录', 'info');
+      updateAuthUI();
+    }
+  } else {
+    authModal?.classList.add('show');
+  }
+};
+if (closeAuthBtn) closeAuthBtn.onclick = () => authModal?.classList.remove('show');
+if (authToggleBtn) authToggleBtn.onclick = () => {
+  isRegisterMode = !isRegisterMode;
+  authModalTitle.textContent = isRegisterMode ? '注册' : '登录';
+  authToggleBtn.textContent = isRegisterMode ? '切换登录' : '切换注册';
+  authNicknameGroup.style.display = isRegisterMode ? 'block' : 'none';
+  authStatus.textContent = '';
+};
+
+if (authSubmitBtn) authSubmitBtn.onclick = async () => {
+  const email = document.getElementById('authEmail')?.value?.trim();
+  const password = document.getElementById('authPassword')?.value;
+  const nickname = document.getElementById('authNickname')?.value?.trim();
+  if (!email || !password) { showToast('请填写邮箱和密码', 'error'); return; }
+  if (!pb) { showToast('请先配置 PocketBase 地址', 'error'); return; }
+  authSubmitBtn.disabled = true;
+  authStatus.textContent = '处理中...';
+  try {
+    if (isRegisterMode) {
+      await pb.collection('users').create({ email, password, passwordConfirm: password, nickname: nickname || email.split('@')[0] });
+      await pb.collection('users').authWithPassword(email, password);
+      authStatus.textContent = '注册成功！';
+    } else {
+      await pb.collection('users').authWithPassword(email, password);
+      authStatus.textContent = '登录成功！';
+    }
+    currentUser = pb.authStore.record;
+    setTimeout(() => { authModal?.classList.remove('show'); updateAuthUI(); }, 800);
+  } catch (e) {
+    authStatus.textContent = '失败: ' + (e.message || '请检查邮箱和密码');
+  } finally { authSubmitBtn.disabled = false; }
+};
+
+function updateAuthUI() {
+  if (authBtn) {
+    authBtn.title = currentUser ? `已登录: ${currentUser.nickname || currentUser.email} (点击退出)` : '登录/注册';
+    authBtn.innerHTML = currentUser ? '<i class="fa fa-user"></i>' : '<i class="fa fa-user-o"></i>';
+  }
+}
+
+// ========== 可视化模式 (tldraw) ==========
+const visualModal = document.getElementById('visualModal');
+const visualBtn = document.getElementById('visualBtn');
+const closeVisualBtn = document.getElementById('closeVisualBtn');
+
+if (visualBtn) visualBtn.onclick = () => {
+  visualModal?.classList.add('show');
+  renderVisualTree();
+};
+if (closeVisualBtn) closeVisualBtn.onclick = () => visualModal?.classList.remove('show');
+
+function renderVisualTree() {
+  const container = document.getElementById('visualContainer');
+  if (!container || !convTree) return;
+  const nodes = Array.from(convTree.nodes.values());
+  if (nodes.length === 0) { container.innerHTML = '<p style="padding:2rem;text-align:center;color:var(--ink-3)">暂无对话内容</p>'; return; }
+
+  // 构建可视化 SVG 树
+  const width = container.clientWidth || 1100;
+  const height = container.clientHeight || 600;
+  const nodeW = 180, nodeH = 60, gapX = 40, gapY = 80;
+
+  // 计算层级布局
+  const levels = new Map();
+  const positions = new Map();
+  function getLevel(nodeId, visited = new Set()) {
+    if (visited.has(nodeId)) return 0;
+    visited.add(nodeId);
+    const node = convTree.nodes.get(nodeId);
+    if (!node || !node.parentId) return 0;
+    return 1 + getLevel(node.parentId, visited);
+  }
+  nodes.forEach(n => {
+    const level = getLevel(n.id);
+    if (!levels.has(level)) levels.set(level, []);
+    levels.get(level).push(n);
+  });
+
+  // 计算位置
+  levels.forEach((levelNodes, level) => {
+    const totalWidth = levelNodes.length * (nodeW + gapX) - gapX;
+    const startX = (width - totalWidth) / 2;
+    levelNodes.forEach((node, i) => {
+      positions.set(node.id, { x: startX + i * (nodeW + gapX), y: 40 + level * (nodeH + gapY) });
+    });
+  });
+
+  // 生成 SVG
+  let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<rect width="${width}" height="${height}" fill="var(--surface)" rx="8"/>`;
+
+  // 绘制连线
+  nodes.forEach(n => {
+    if (n.parentId && positions.has(n.parentId) && positions.has(n.id)) {
+      const from = positions.get(n.parentId);
+      const to = positions.get(n.id);
+      svg += `<line x1="${from.x + nodeW/2}" y1="${from.y + nodeH}" x2="${to.x + nodeW/2}" y2="${to.y}" stroke="var(--border-strong)" stroke-width="2" stroke-dasharray="4"/>`;
+    }
+  });
+
+  // 绘制节点
+  nodes.forEach(n => {
+    const pos = positions.get(n.id);
+    if (!pos) return;
+    const isActive = convTree.activeLeafId === n.id;
+    const color = n.role === 'user' ? 'var(--primary)' : 'var(--accent)';
+    const bg = isActive ? (n.role === 'user' ? 'var(--primary-soft)' : 'var(--accent-soft)') : 'var(--card)';
+    const border = isActive ? color : 'var(--border)';
+    const preview = (n.content || '').slice(0, 40) + (n.content && n.content.length > 40 ? '...' : '');
+    svg += `<g style="cursor:pointer" onclick="switchBranch && switchBranch('${n.id}')">`;
+    svg += `<rect x="${pos.x}" y="${pos.y}" width="${nodeW}" height="${nodeH}" rx="10" fill="${bg}" stroke="${border}" stroke-width="${isActive ? 2 : 1}"/>`;
+    svg += `<text x="${pos.x + 12}" y="${pos.y + 20}" font-size="12" font-weight="600" fill="${color}">${n.role === 'user' ? '用户' : 'AI'}</text>`;
+    svg += `<text x="${pos.x + 12}" y="${pos.y + 40}" font-size="11" fill="var(--ink-3)" clip-path="inset(0 0 0 0)">${preview.replace(/</g, '&lt;')}</text>`;
+    svg += `</g>`;
+  });
+
+  svg += `</svg>`;
+  container.innerHTML = svg;
+}
+
+window.switchBranch = function(nodeId) {
+  if (!convTree) return;
+  convTree.activeLeafId = nodeId;
+  saveTree();
+  renderBranch();
+  visualModal?.classList.remove('show');
+  showToast('已切换到分支', 'info');
+};
+
+// ========== 文件上传 ==========
+const messageInput = document.getElementById('messageInput');
+if (messageInput) {
+  messageInput.addEventListener('paste', async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) handleFileUpload(file);
+      }
+    }
+  });
+}
+
+function handleFileUpload(file) {
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (file.size > maxSize) { showToast('文件大小不能超过 10MB', 'error'); return; }
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      const currentVal = messageInput.value;
+      messageInput.value = currentVal + `\n![${file.name}](${base64})`;
+      showToast('图片已添加到消息', 'success');
+    };
+    reader.readAsDataURL(file);
+  } else {
+    showToast('暂仅支持图片文件上传', 'info');
+  }
+}
+
+// 拖拽上传
+const chatContainer = document.getElementById('chatContainer');
+if (chatContainer) {
+  chatContainer.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+  chatContainer.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) handleFileUpload(files[0]);
+  });
+}
+
+// ========== 对话搜索 ==========
+const sidebarSearch = document.createElement('div');
+sidebarSearch.className = 'sidebar-search';
+sidebarSearch.innerHTML = '<input type="text" id="convSearchInput" placeholder="搜索对话..." style="width:100%;padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:0.82rem">';
+const sidebarHeader = document.querySelector('.sidebar-header');
+if (sidebarHeader) sidebarHeader.after(sidebarSearch);
+
+const convSearchInput = document.getElementById('convSearchInput');
+if (convSearchInput) {
+  convSearchInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    const items = document.querySelectorAll('.chat-history-item');
+    items.forEach(item => {
+      const title = item.querySelector('.history-title')?.textContent?.toLowerCase() || '';
+      item.style.display = title.includes(query) ? '' : 'none';
+    });
+  });
+}
+
+// ========== 快捷键扩展 ==========
+document.addEventListener('keydown', (e) => {
+  // Ctrl+V 可视化模式
+  if (e.ctrlKey && e.key === 'v' && !e.shiftKey && document.activeElement === document.body) {
+    e.preventDefault();
+    visualBtn?.click();
+  }
+});
+
+// 更新抽屉菜单
+const drawerBtns = document.querySelector('.drawer-btns');
+if (drawerBtns) {
+  const visualDrawerBtn = document.createElement('button');
+  visualDrawerBtn.className = 'drawer-btn';
+  visualDrawerBtn.innerHTML = '<i class="fa fa-object-group"></i> 可视化模式';
+  visualDrawerBtn.onclick = () => { closeDrawerBtn?.click(); visualBtn?.click(); };
+  const branchDrawerBtn = drawerBtns.querySelector('[id="drawerBranchBtn"]');
+  if (branchDrawerBtn) branchDrawerBtn.after(visualDrawerBtn);
+
+  const authDrawerBtn = document.createElement('button');
+  authDrawerBtn.className = 'drawer-btn';
+  authDrawerBtn.innerHTML = '<i class="fa fa-user"></i> 登录/注册';
+  authDrawerBtn.onclick = () => { closeDrawerBtn?.click(); authBtn?.click(); };
+  drawerBtns.appendChild(authDrawerBtn);
+}
+
+// ========== 云端同步（可选） ==========
+async function syncToCloud() {
+  if (!pb || !currentUser || !convTree) return;
+  try {
+    const existing = await pb.collection('conversations').getList(1, 1, { filter: `conv_id = "${convTree.convId}"` });
+    const data = {
+      conv_id: convTree.convId,
+      user_id: currentUser.id,
+      title: document.querySelector('.header-title')?.textContent || '未命名对话',
+      tree_data: JSON.stringify(Array.from(convTree.nodes.entries())),
+      updated: new Date().toISOString()
+    };
+    if (existing.items.length > 0) {
+      await pb.collection('conversations').update(existing.items[0].id, data);
+    } else {
+      await pb.collection('conversations').create(data);
+    }
+  } catch (e) { /* 静默失败 */ }
+}
+
+// 每 30 秒自动同步
+setInterval(syncToCloud, 30000);
+
+console.log('%c星云AI Ultra%c 已加载', 'color:#6366f1;font-weight:bold;font-size:14px', 'color:#888;font-size:12px');
 </script>
 </body>
 </html>
