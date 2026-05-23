@@ -1861,7 +1861,9 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem(convTree.convId, JSON.stringify(convTree.toJSON()));
   }
 
-  let settings = JSON.parse(localStorage.getItem('aiSettings')) || {
+  let settings;
+  try { settings = JSON.parse(localStorage.getItem('aiSettings')); } catch(_) { settings = null; }
+  settings = settings || {
     apiBaseUrl: 'https://api.doubao.com/v1', apiKey: '', modelName: 'doubao-pro-32k',
     systemPrompt: '你是一个乐于助人的AI助手，回答尽可能使用LaTeX公式。',
     prefixPrompt: '', suffixPrompt: '', temperature: 0.7, maxContextRounds: 20,
@@ -1883,6 +1885,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (themeBtn) themeBtn.innerHTML = `<i class="fa ${icons[idx]}"></i>`;
   }
   applyTheme(currentTheme);
+  window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change', () => { if (currentTheme === 0) applyTheme(0); });
 
   // 加载设置
   if ($('apiBaseUrl')) $('apiBaseUrl').value = settings.apiBaseUrl;
