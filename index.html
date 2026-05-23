@@ -1860,8 +1860,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const branch = convTree.activeBranch();
     const firstUser = branch.find(n => n.role === 'user');
     const title = firstUser ? firstUser.content.slice(0, 30) : '新对话';
-    addConvToList(convTree.convId, title);
+    const list = (() => { const s = localStorage.getItem('convHistory'); try { return s ? JSON.parse(s) : []; } catch(_) { return []; } })();
+    const existing = list.find(c => c.id === convTree.convId);
+    if (existing) { existing.title = title; existing.time = Date.now(); }
+    else { list.unshift({ id: convTree.convId, title, time: Date.now() }); }
+    if (list.length > 50) list.length = 50;
+    localStorage.setItem('convHistory', JSON.stringify(list));
     localStorage.setItem(convTree.convId, JSON.stringify(convTree.toJSON()));
+    if (typeof renderHistoryList === 'function') renderHistoryList();
   }
 
   let settings;
