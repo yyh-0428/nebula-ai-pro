@@ -346,6 +346,7 @@ body {
   color: var(--ink);
   min-height: 100vh;
   overflow: hidden;
+  touch-action: manipulation;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -1774,6 +1775,17 @@ body, .app-wrapper, .sidebar, .header, .input-area, .msg-bubble, .icon-btn,
 @media(hover: none) and (pointer: coarse) {
   .msg-actions { opacity: 0.6; }
   .message:hover .msg-actions { opacity: 1; }
+
+  /* ===== 触摸设备禁用所有 hover transform — 防止点击错位 ===== */
+  .msg-bubble:hover,
+  .send-btn:hover:not(:disabled),
+  .save-btn:hover,
+  .onboarding-btn:hover,
+  .scroll-bottom-btn:hover {
+    transform: none !important;
+  }
+  .icon-btn:hover { transform: none !important; }
+  /* 禁用 hover 的 translate/scale 动画，保留 opacity 和颜色变化 */
 }
 
 /* === Code Copy Animation === */
